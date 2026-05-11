@@ -1,50 +1,79 @@
 export default async (clients, m, { isOwner }) => {
-    let menu = ''
-    let aiStatus = process.env.GEMINI_ENABLE === 'true' ? 'Aktif' : 'Nonaktif'
+    let ad = { ...AD_REPLY, thumbnail: global.MENU_THUMB, renderLargerThumbnail: true, mediaUrl: process.env.THUMB_URL || 'https://files.covenant.sbs/bc5d34c2-ca8d-4c94-a69c-1e48d0ded206.jpeg' }
 
     if (!isOwner) {
-        menu = `*Epistemeia Bot - Fitur Publik*
-
-*Formulir Pendaftaran*
-.test - Simulasi formulir pendaftaran
-.cancel - Batalkan proses formulir
-
-*Lainnya*
-.menu - Tampilkan menu ini
-AI ${aiStatus} - Ketik pertanyaan untuk bertanya ke AI`
-    } else {
-        menu = `*Epistemeia Bot - Panel Admin*
-
-*Formulir Pendaftaran*
-.test - Simulasi formulir pendaftaran
-.cancel - Batalkan proses formulir
-.cekpending - Lihat daftar pendaftar tertunda
-.approve @user - Setujui permintaan pendaftar
-.reject @user - Tolak permintaan pendaftar
-
-*Manajemen Grup*
-.setgroup - Daftarkan grup ini sebagai grup terkelola
-.delgroup - Hapus grup dari daftar terkelola
-.listgroups - Lihat semua grup terdaftar
-
-*Moderasi Anggota*
-.warn @user - Beri peringatan ke anggota
-.kick @user - Keluarkan anggota dari grup
-.ban @user - Blokir anggota (tidak bisa bergabung lagi)
-.unban @user - Buka blokir anggota
-.warns - Lihat daftar blokir dan peringatan
-
-*Mode Bot*
-.self - Mode sendiri (hanya owner)
-.public - Mode publik (semua orang)
-.stealth - Sembunyikan/tampilkan menu admin publik
-.menu - Tampilkan menu ini`
-
-        if (set.stealth) {
-            menu += '\n\nMode siluman sedang AKTIF. Menu admin disembunyikan dari pengguna biasa.'
-        }
-        menu += `\nAI ${aiStatus}`
+        await clients.sendMessage(m.chat, {
+            text: '*Epistemeia Bot - Menu Publik*',
+            footer: 'Pilih perintah di bawah',
+            title: 'Menu Publik',
+            buttonText: 'Buka Menu',
+            sections: [
+                {
+                    title: 'Formulir Pendaftaran',
+                    rows: [
+                        { title: '.test', rowId: '.test', description: 'Simulasi formulir pendaftaran' },
+                        { title: '.cancel', rowId: '.cancel', description: 'Batalkan proses formulir' }
+                    ]
+                },
+                {
+                    title: 'Lainnya',
+                    rows: [
+                        { title: '.menu', rowId: '.menu', description: 'Tampilkan menu ini' }
+                    ]
+                }
+            ],
+            contextInfo: { externalAdReply: ad }
+        })
+        return
     }
 
-    await m.reply(menu)
+    let aiStatus = process.env.GEMINI_ENABLE === 'true' ? 'Aktif' : 'Nonaktif'
+    let stealthStatus = set.stealth ? 'AKTIF' : 'Nonaktif'
+
+    await clients.sendMessage(m.chat, {
+        text: `*Epistemeia Bot - Panel Admin*\nAI: ${aiStatus} | Stealth: ${stealthStatus}`,
+        footer: 'Ketik manual jika ada parameter (reply/mention)',
+        title: 'Panel Admin',
+        buttonText: 'Buka Menu',
+        sections: [
+            {
+                title: 'Formulir Pendaftaran',
+                rows: [
+                    { title: '.test', rowId: '.test', description: 'Simulasi formulir' },
+                    { title: '.cancel', rowId: '.cancel', description: 'Batalkan formulir' },
+                    { title: '.cekpending', rowId: '.cekpending', description: 'Lihat pendaftar tertunda' },
+                    { title: '.approve', rowId: '.approve', description: 'Setujui pendaftar' },
+                    { title: '.reject', rowId: '.reject', description: 'Tolak pendaftar' }
+                ]
+            },
+            {
+                title: 'Manajemen Grup',
+                rows: [
+                    { title: '.setgroup', rowId: '.setgroup', description: 'Daftarkan grup ini' },
+                    { title: '.delgroup', rowId: '.delgroup', description: 'Hapus grup dari daftar' },
+                    { title: '.listgroups', rowId: '.listgroups', description: 'Lihat grup terdaftar' }
+                ]
+            },
+            {
+                title: 'Moderasi Anggota',
+                rows: [
+                    { title: '.warn', rowId: '.warn', description: 'Beri peringatan' },
+                    { title: '.kick', rowId: '.kick', description: 'Keluarkan anggota' },
+                    { title: '.ban', rowId: '.ban', description: 'Blokir permanen' },
+                    { title: '.unban', rowId: '.unban', description: 'Buka blokir' },
+                    { title: '.warns', rowId: '.warns', description: 'Lihat daftar blokir' }
+                ]
+            },
+            {
+                title: 'Mode Bot',
+                rows: [
+                    { title: '.self', rowId: '.self', description: 'Mode sendiri (owner only)' },
+                    { title: '.public', rowId: '.public', description: 'Mode publik' },
+                    { title: '.stealth', rowId: '.stealth', description: 'Sembunyikan menu admin' },
+                    { title: '.menu', rowId: '.menu', description: 'Tampilkan menu ini' }
+                ]
+            }
+        ],
+        contextInfo: { externalAdReply: ad }
+    })
 }

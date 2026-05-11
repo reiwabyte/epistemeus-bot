@@ -47,20 +47,18 @@ global.AD_REPLY = {
     body: 'Forum Diskusi Ilmiah',
     mediaType: 1,
     sourceUrl: THUMB_URL,
-    mediaUrl: THUMB_URL,
     showAdAttribution: false,
-    renderLargerThumbnail: true,
-    thumbnail: null
+    renderLargerThumbnail: false
 }
 
-try {
-    fetch(THUMB_URL).then(r => {
-        if (!r.ok) throw new Error('fetch failed')
-        return r.arrayBuffer()
-    }).then(buf => {
-        if (!buf) return
-        return sharp(Buffer.from(buf)).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
-    }).then(buf => {
-        if (buf) global.AD_REPLY.thumbnail = buf
-    }).catch(() => {})
-} catch (e) {}
+global.MENU_THUMB = null
+
+fetch(THUMB_URL).then(r => {
+    if (!r.ok) throw new Error()
+    return r.arrayBuffer()
+}).then(buf => {
+    if (!buf) throw new Error()
+    return sharp(Buffer.from(buf)).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+}).then(buf => {
+    if (buf) global.MENU_THUMB = buf
+}).catch(() => {})
