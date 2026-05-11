@@ -45,5 +45,6 @@ global.AD_REPLY = {
     mediaType: 1,
     sourceUrl: 'https://example.com',
     showAdAttribution: false,
-    renderLargerThumbnail: false
+    renderLargerThumbnail: true,
+    thumbnail: null
 }

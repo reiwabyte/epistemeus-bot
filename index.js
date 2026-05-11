@@ -44,6 +44,11 @@ async function start() {
         }
     })
 
+    try {
+        let resp = await fetch('https://files.covenant.sbs/bc5d34c2-ca8d-4c94-a69c-1e48d0ded206.jpeg')
+        if (resp.ok) global.AD_REPLY.thumbnail = Buffer.from(await resp.arrayBuffer())
+    } catch (e) {}
+
     clients.ev.on('connection.update', async update => {
         let { connection, lastDisconnect } = update
         if (connection === 'close') {
