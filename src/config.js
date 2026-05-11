@@ -24,6 +24,7 @@ global.pair = {
 }
 
 global.geminiKey = process.env.GEMINI_KEY || ''
+global.geminiEnable = process.env.GEMINI_ENABLE === 'true'
 
 global.db = db
 global.grup = db

@@ -21,7 +21,8 @@ cp .env.example .env
 | PAIR_NOMOR | Phone number for pairing code |
 | PAIR_MODE | `false` to show QR instead of pairing |
 | SESI | Session folder name (default: `session`) |
-| GEMINI_KEY | Google Gemini API key for AI responses |
+| GEMINI_ENABLE | `true` to enable Gemini AI (requires GEMINI_KEY) |
+| GEMINI_KEY | Google Gemini API key (required if GEMINI_ENABLE=true) |
 
 ## Commands
 

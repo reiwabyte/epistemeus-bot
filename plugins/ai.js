@@ -1,13 +1,23 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
 let genAI = null
 let lastAsk = {}
+let _ready = false
 
-if (geminiKey) {
-    genAI = new GoogleGenerativeAI(geminiKey)
+async function init() {
+    if (_ready) return
+    _ready = true
+    if (process.env.GEMINI_ENABLE !== 'true') return
+    const key = process.env.GEMINI_KEY || ''
+    if (!key) return
+    try {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai')
+        genAI = new GoogleGenerativeAI(key)
+    } catch (e) {
+        // AI nonaktif
+    }
 }
 
 export default async (clients, m, text) => {
+    await init()
     if (!genAI || !text || text.length < 3) return false
     if (text.startsWith(set.prefix[0])) return false
 
