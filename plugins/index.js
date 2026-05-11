@@ -65,7 +65,7 @@ async function sendApprovalToOwner(clients, m, data) {
     let userNum = m.sender.split('@')[0]
     let label = data.isTest ? ' [UJI COBA]' : ''
     let groupName = data.isTest
-        ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup'
+        ? (data.groupJid?.endsWith('@g.us') ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup' : 'Epistemeia')
         : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
     let formatted = data.answers.map((a, i) => {
@@ -126,7 +126,7 @@ export default async (clients, m) => {
                 data.answers[4] = answer
 
                 let groupName = data.isTest
-                    ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup'
+                    ? (data.groupJid?.endsWith('@g.us') ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup' : 'Epistemeia')
                     : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
                 data.step = 5
@@ -267,7 +267,7 @@ export default async (clients, m) => {
                 data.answers[data.step] = body
 
                 let groupName = data.isTest
-                    ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup'
+                    ? (data.groupJid?.endsWith('@g.us') ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup' : 'Epistemeia')
                     : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
                 data.step++
