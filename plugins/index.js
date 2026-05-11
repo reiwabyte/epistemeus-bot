@@ -9,30 +9,22 @@ import rejectCmd from './reject.js'
 import cekpendingCmd from './cekpending.js'
 import cancelCmd from './cancel.js'
 import menuCmd from './menu.js'
+import aiCmd from './ai.js'
 import { checkMessage } from '../src/utils/moderation.js'
 import warnCmd from './warn.js'
 import kickCmd from './kick.js'
 import banCmd from './ban.js'
 import unbanCmd from './unban.js'
 import warnsCmd from './warns.js'
+import stealthCmd from './stealth.js'
 
 const commands = {
     self: selfCmd, public: publicCmd, test: testCmd,
     setgroup: setgroupCmd, delgroup: delgroupCmd, listgroups: listgroupsCmd,
     approve: approveCmd, reject: rejectCmd, cekpending: cekpendingCmd, cancel: cancelCmd,
     menu: menuCmd,
-    warn: warnCmd, kick: kickCmd, ban: banCmd, unban: unbanCmd, warns: warnsCmd
-}
-
-function getPending(sender, chat) {
-    let d = pendingVerification.get(sender)
-    if (d) return d
-    if (chat && chat !== sender) d = pendingVerification.get(chat)
-    if (d) return d
-    for (let [jid, data] of pendingVerification) {
-        if (bail.areJidsSameUser(jid, sender)) return data
-    }
-    return null
+    warn: warnCmd, kick: kickCmd, ban: banCmd, unban: unbanCmd, warns: warnsCmd,
+    stealth: stealthCmd
 }
 
 const STEP_QUESTIONS = [
@@ -69,7 +61,7 @@ async function sendQuestion(clients, jid, step, groupName) {
 async function sendApprovalToOwner(clients, m, data) {
     let userInfo = m.pushName || m.sender.split('@')[0]
     let userNum = m.sender.split('@')[0]
-    let label = data.isTest ? ' [TEST]' : ''
+    let label = data.isTest ? ' [UJI COBA]' : ''
     let groupName = data.isTest
         ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup'
         : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
@@ -81,7 +73,7 @@ async function sendApprovalToOwner(clients, m, data) {
         return `${q}\n*${a}*`
     }).filter(Boolean).join('\n\n')
 
-    let msgToOwner = `[Rekrutmen Baru${label}]
+    let msgToOwner = `[Pendaftar Baru${label}]
 
 Nama: *${userInfo}*
 Nomor: *${userNum}*
@@ -97,7 +89,7 @@ ${formatted}`
     ]
 
     if (data.karyaFiles?.length) {
-        msgToOwner += `\n\nKarya: ${data.karyaFiles.length} file`
+        msgToOwner += `\n\nKarya: ${data.karyaFiles.length} berkas`
     }
 
     await clients.sendMessage(m.owner, {
@@ -147,15 +139,15 @@ export default async (clients, m) => {
                 let data = pendingVerification.get(targetJid)
 
                 if (!data) {
-                    await clients.sendMessage(m.chat, { text: 'Tidak ada permintaan pending dari user tersebut (mungkin sudah diproses)' })
+                    await clients.sendMessage(m.chat, { text: 'Tidak ada permintaan tertunda dari pengguna tersebut (mungkin sudah diproses)' })
                     return
                 }
                 if (isApprove && data.status !== 'waiting_approval') {
-                    await clients.sendMessage(m.chat, { text: `Status user: ${data.status}. Tidak bisa di-approve.` })
+                    await clients.sendMessage(m.chat, { text: `Status pengguna: ${data.status}. Tidak bisa disetujui.` })
                     return
                 }
                 if (data.isTest) {
-                    await clients.sendMessage(m.chat, { text: `[TEST] Berhasil ${isApprove ? 'menerima' : 'menolak'} @${targetNum}`, mentions: [targetJid] })
+                    await clients.sendMessage(m.chat, { text: `[UJI COBA] Berhasil ${isApprove ? 'menerima' : 'menolak'} @${targetNum}`, mentions: [targetJid] })
                     pendingVerification.delete(targetJid)
                     return
                 }
@@ -167,12 +159,12 @@ export default async (clients, m) => {
                 if (isApprove) {
                     await clients.sendMessage(targetJid, { text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Silakan cek grup sekarang.` })
                 } else {
-                    await clients.sendMessage(targetJid, { text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi interview.` })
+                    await clients.sendMessage(targetJid, { text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi formulir.` })
                 }
 
                 await clients.sendMessage(m.chat, { text: `Berhasil ${isApprove ? 'menerima' : 'menolak'} @${targetNum}`, mentions: [targetJid] })
                 pendingVerification.delete(targetJid)
-                logger.info(`${isApprove ? 'Approved' : 'Rejected'} join request for ${targetJid} via button`)
+                logger.info(`${isApprove ? 'Menyetujui' : 'Menolak'} permintaan bergabung untuk ${targetJid} melalui tombol`)
                 return
             }
         }
@@ -211,7 +203,7 @@ export default async (clients, m) => {
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
                     pendingVerification.set(m.sender, data)
-                    logger.info(`Interview completed for ${m.sender}, forwarded to owner`)
+                    logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                     return
                 }
 
@@ -223,7 +215,7 @@ export default async (clients, m) => {
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
                     pendingVerification.set(m.sender, data)
-                    logger.info(`Interview completed for ${m.sender}, forwarded to owner`)
+                    logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                     return
                 }
 
@@ -235,7 +227,7 @@ export default async (clients, m) => {
                         let stream = await bail.downloadContentFromMessage(m.message[m.mtype], m.mtype.replace('Message', '').toLowerCase())
                         let buffer = Buffer.from([])
                         for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
-                        let fileName = m.message[m.mtype]?.fileName || 'file'
+                        let fileName = m.message[m.mtype]?.fileName || 'berkas'
                         let mimetype = m.message[m.mtype]?.mimetype || 'application/octet-stream'
                         let caption = m.message[m.mtype]?.caption || ''
 
@@ -247,13 +239,13 @@ export default async (clients, m) => {
                         })
                         data.karyaFiles.push({ type: m.mtype, fileName, caption, time: Date.now() })
                     } catch (e) {
-                        logger.error('Error forwarding karya media:', e)
+                        logger.error('Gagal meneruskan karya:', e)
                     }
                 } else if (body) {
                     await clients.sendMessage(m.owner, {
                         text: `[KARYA dari ${m.sender.split('@')[0]}]\n\n${body}`
                     })
-                    data.karyaFiles.push({ type: 'text', text: body, time: Date.now() })
+                    data.karyaFiles.push({ type: 'teks', text: body, time: Date.now() })
                 }
 
                 await clients.sendMessage(m.chat, {
@@ -286,7 +278,7 @@ export default async (clients, m) => {
                 if (!/tidak\s*ada/i.test(lastAnswer) && lastAnswer.trim()) {
                     data.status = 'waiting_karya'
                     await clients.sendMessage(m.chat, {
-                        text: 'Izinkan kami melihat karya ilmiah anda. Silakan kirim file (foto, PDF, Word) atau link web.\n\nKetik "selesai" jika sudah selesai mengirim.',
+                        text: 'Izinkan kami melihat karya ilmiah anda. Silakan kirim berkas (foto, PDF, Word) atau tautan web.\n\nKetik "selesai" jika sudah selesai mengirim.',
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
                     pendingVerification.set(m.sender, data)
@@ -300,7 +292,7 @@ export default async (clients, m) => {
                     contextInfo: { externalAdReply: AD_REPLY }
                 })
                 pendingVerification.set(m.sender, data)
-                logger.info(`Interview completed for ${m.sender}, forwarded to owner`)
+                logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                 return
             }
             return
@@ -318,7 +310,7 @@ export default async (clients, m) => {
 
                     let reasons = await checkMessage(body, messageHistory[senderId])
                     if (reasons) {
-                        logger.info(`Moderation: ${senderId} flagged for: ${reasons.join(', ')}`)
+                        logger.info(`Moderasi: ${senderId} terdeteksi: ${reasons.join(', ')}`)
                         let warnCount = (db.warns?.[senderId] || 0) + 1
                         if (!db.warns) db.warns = {}
                         db.warns[senderId] = warnCount
@@ -334,11 +326,11 @@ export default async (clients, m) => {
                             db.banned = db.banned || []
                             if (!db.banned.includes(senderId)) db.banned.push(senderId)
                             saveDb()
-                            logger.info(`Banned ${senderId} from ${m.chat} (3 warnings)`)
+                            logger.info(`Diblokir ${senderId} dari ${m.chat} (3 peringatan)`)
                         }
                         if (warnCount >= 2) {
                             await clients.sendMessage(m.chat, {
-                                text: `@${senderId} kamu telah mendapat 2 peringatan. 1 peringatan lagi dan kamu akan di-kick dan di-ban.`,
+                                text: `@${senderId} kamu telah mendapat 2 peringatan. 1 peringatan lagi dan kamu akan dikeluarkan dan diblokir.`,
                                 contextInfo: { mentionedJid: [m.sender] }
                             })
                         }
@@ -349,8 +341,13 @@ export default async (clients, m) => {
 
         if (cmd && commands[cmd]) {
             await commands[cmd](clients, m, { body, prefix, cmd, isOwner, isGroup })
+            return
+        }
+
+        if (body && !isGroup) {
+            await aiCmd(clients, m, body)
         }
     } catch (e) {
-        console.error('caseHandler error:', e)
+        console.error('Kesalahan penanganan pesan:', e)
     }
 }

@@ -1,13 +1,13 @@
 export default async (clients, m, { isOwner }) => {
     if (!isOwner) return
 
-    let text = '*Daftar Banned & Peringatan*\n\n'
+    let text = '*Daftar Blokir dan Peringatan*\n\n'
 
     if (db.banned?.length) {
-        text += '*Banned:*\n'
+        text += '*Diblokir:*\n'
         text += db.banned.map((n, i) => `${i + 1}. ${n}`).join('\n')
     } else {
-        text += '*Banned:* (kosong)\n'
+        text += '*Diblokir:* (kosong)\n'
     }
 
     text += '\n\n*Peringatan:*\n'

@@ -1,4 +1,5 @@
 console.clear()
+import 'dotenv/config'
 import './src/config.js'
 import pino from 'pino'
 import { clientsConfig, smsg } from './src/utils/handler.js'

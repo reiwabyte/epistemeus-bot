@@ -1,9 +1,9 @@
 export default async (clients, m, { isOwner, isGroup, prefix }) => {
     if (!isOwner) return
-    if (!isGroup) return m.reply('Perintah ini hanya bisa digunakan di grup')
+    if (!isGroup) return m.reply('Perintah ini hanya bisa digunakan di dalam grup')
 
     let target = m.mentionedJid?.[0] || m.quoted?.sender
-    if (!target) return m.reply(`Gunakan: ${prefix}ban @user`)
+    if (!target) return m.reply(`Gunakan: ${prefix}ban @pengguna`)
 
     let targetNum = target.split('@')[0]
     if (!db.banned) db.banned = []
@@ -15,9 +15,9 @@ export default async (clients, m, { isOwner, isGroup, prefix }) => {
     try {
         await clients.groupParticipantsUpdate(m.chat, [target], 'remove')
     } catch (e) {
-        logger.warn(`Failed to kick ${target}: ${e.message}`)
+        logger.warn(`Gagal mengeluarkan ${target}: ${e.message}`)
     }
 
-    await m.reply(`@${targetNum} telah di-ban. Nomor ini tidak bisa bergabung ke grup yang dikelola.`, { contextInfo: { mentionedJid: [target] } })
-    logger.info(`Banned ${target}`)
+    await m.reply(`@${targetNum} telah diblokir. Nomor ini tidak bisa bergabung ke grup yang dikelola.`, { contextInfo: { mentionedJid: [target] } })
+    logger.info(`Memblokir ${target}`)
 }

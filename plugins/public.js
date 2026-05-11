@@ -1,5 +1,5 @@
 export default async (clients, m, { isOwner }) => {
-    if (!isOwner) return m.reply('Owner only')
+    if (!isOwner) return
     set.self = false
-    await m.reply('Public mode activated')
+    await m.reply('Mode publik diaktifkan. Semua orang bisa menggunakan bot.')
 }

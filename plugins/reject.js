@@ -5,13 +5,13 @@ export default async (clients, m, { isOwner, prefix }) => {
         let num = m.body?.replace(/[^0-9]/g, '')
         if (num) targetJid = num + '@s.whatsapp.net'
     }
-    if (!targetJid) return m.reply(`Gunakan: ${prefix}reject [nomor|@user]`)
+    if (!targetJid) return m.reply(`Gunakan: ${prefix}reject [nomor|@pengguna]`)
 
     let data = pendingVerification.get(targetJid)
-    if (!data) return m.reply('Tidak ada permintaan pending dari user tersebut')
+    if (!data) return m.reply('Tidak ada permintaan tertunda dari pengguna tersebut')
 
     if (data.isTest) {
-        await m.reply(`[TEST] Berhasil reject @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
+        await m.reply(`[UJI COBA] Berhasil menolak @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
         pendingVerification.delete(targetJid)
         return
     }
@@ -22,10 +22,10 @@ export default async (clients, m, { isOwner, prefix }) => {
     let gName = gd?.name || 'Grup'
 
     await clients.sendMessage(targetJid, {
-        text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi interview.`
+        text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi formulir.`
     })
 
-    await m.reply(`Berhasil menolak join request dari @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
+    await m.reply(`Berhasil menolak permintaan bergabung dari @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
     pendingVerification.delete(targetJid)
-    logger.info(`Rejected join request for ${targetJid}`)
+    logger.info(`Menolak permintaan bergabung untuk ${targetJid}`)
 }

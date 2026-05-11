@@ -11,13 +11,13 @@ export default async (clients, m, { isOwner, isGroup, body, prefix, cmd }) => {
     }
 
     let idx = db.groups?.findIndex(g => g.id === targetJid)
-    if (idx === undefined || idx === -1) return m.reply('Grup tidak ditemukan di database')
+    if (idx === undefined || idx === -1) return m.reply('Grup tidak ditemukan dalam daftar')
 
     let name = db.groups[idx].name
     db.groups.splice(idx, 1)
     saveDb()
-    await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil dihapus dari daftar.\n\nBot akan restart...` })
-    logger.info(`Group removed: ${targetJid}`)
+    await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil dihapus dari daftar.\n\nBot akan mulai ulang...` })
+    logger.info(`Grup dihapus: ${targetJid}`)
     await bail.delay(2000)
     process.exit(0)
 }

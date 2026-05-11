@@ -8,16 +8,16 @@ export default async (clients, m, { isOwner, body, prefix, cmd }) => {
         if (num) target = num
     }
 
-    if (!target) return m.reply(`Gunakan: ${prefix}unban @user`)
+    if (!target) return m.reply(`Gunakan: ${prefix}unban @pengguna`)
 
     let targetNum = target.includes('@') ? target.split('@')[0] : target
     if (!db.banned) db.banned = []
     let idx = db.banned.indexOf(targetNum)
-    if (idx === -1) return m.reply(`${targetNum} tidak ada dalam daftar banned`)
+    if (idx === -1) return m.reply(`${targetNum} tidak ada dalam daftar blokir`)
 
     db.banned.splice(idx, 1)
     saveDb()
 
-    await m.reply(`${targetNum} telah di-unban.`)
-    logger.info(`Unbanned ${targetNum}`)
+    await m.reply(`${targetNum} telah dibuka blokirnya.`)
+    logger.info(`Membuka blokir ${targetNum}`)
 }

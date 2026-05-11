@@ -1,23 +1,29 @@
+import 'dotenv/config'
 import * as bail from 'ourin-baileys'
 import chalk from 'chalk'
 import logger from './utils/logger.js'
 import { db, reload, saveDb } from './utils/database.js'
 
+let ownerNumbers = (process.env.OWNER_NOMOR || '6283891882373').split(',').map(n => n.trim())
+
 global.owner = {
-    no: ['6283891882373'],
-    name: 'Owner'
+    no: ownerNumbers,
+    name: process.env.OWNER_NAME || 'Owner'
 }
 
 global.set = {
-    prefix: ['.'],
-    self: false
+    prefix: [process.env.PREFIX || '.'],
+    self: process.env.SELF_MODE === 'true',
+    stealth: false
 }
 
 global.pair = {
-    no: '6283891882373',
-    isPair: true,
-    sesi: 'session'
+    no: process.env.PAIR_NOMOR || '6283891882373',
+    isPair: process.env.PAIR_MODE !== 'false',
+    sesi: process.env.SESI || 'session'
 }
+
+global.geminiKey = process.env.GEMINI_KEY || ''
 
 global.db = db
 global.grup = db

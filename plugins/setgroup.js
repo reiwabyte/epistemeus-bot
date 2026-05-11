@@ -9,7 +9,7 @@ export default async (clients, m, { isOwner, isGroup }) => {
     if (exists) {
         exists.name = targetName
         saveDb()
-        await m.reply(`Grup ${targetName} sudah terdaftar, nama diupdate`)
+        await m.reply(`Grup ${targetName} sudah terdaftar, nama diperbarui`)
         return
     }
 
@@ -18,10 +18,10 @@ export default async (clients, m, { isOwner, isGroup }) => {
     saveDb()
 
     await clients.sendMessage(m.chat, {
-        text: `Grup *${targetName}* berhasil didaftarkan!\nJoin request untuk grup ini sekarang akan diproses.\n\nBot akan restart...`,
+        text: `Grup *${targetName}* berhasil didaftarkan!\nPermintaan bergabung untuk grup ini sekarang akan diproses.\n\nBot akan mulai ulang...`,
         contextInfo: { externalAdReply: AD_REPLY }
     })
-    logger.info(`Group registered: ${m.chat} (${targetName})`)
+    logger.info(`Grup terdaftar: ${m.chat} (${targetName})`)
 
     await bail.delay(2000)
     process.exit(0)

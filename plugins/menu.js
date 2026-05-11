@@ -1,36 +1,42 @@
 export default async (clients, m, { isOwner }) => {
-    let menu = `*Epistemeia Bot - Daftar Fitur*
-
-*Interview & Join Request*
-.test - Simulasi interview
-.setgroup - Daftarkan grup untuk join request
-.delgroup - Hapus grup dari daftar
-.listgroups - Lihat daftar grup terdaftar
-.approve @user - Setujui join request
-.reject @user - Tolak join request
-.cekpending - Lihat pending verification
-.cancel - Batalkan proses interview
-
-*Moderasi Grup (otomatis)*
-Deteksi: kata kasar, link phising, spam, pesan berantai, promosi vulgar
-Mekanisme: Peringatan -> Kick & Ban (3 peringatan)
-
-*Perintah Moderasi*
-.warn @user - Beri peringatan manual
-.kick @user - Keluarkan anggota
-.ban @user - Ban anggota permanen
-.unban @user - Hapus ban
-.warns - Lihat daftar banned & peringatan
-
-*Mode Bot*
-.self - Hanya respon owner
-.public - Respon semua orang`
+    let menu = ''
 
     if (!isOwner) {
         menu = `*Epistemeia Bot - Daftar Fitur*
 
-.test - Simulasi interview grup
-.cancel - Batalkan proses interview`
+.test - Simulasi formulir pendaftaran grup
+.cancel - Batalkan proses formulir
+Ketik pertanyaan apa saja untuk bertanya ke AI`
+    } else {
+        menu = `*Epistemeia Bot - Panel Admin*
+
+*Formulir Pendaftaran*
+.test - Uji coba simulasi formulir
+.cancel - Batalkan proses formulir
+.cekpending - Lihat daftar pending
+.approve @user - Setujui pendaftar
+.reject @user - Tolak pendaftar
+
+*Manajemen Grup*
+.setgroup - Daftarkan grup ini
+.delgroup - Hapus grup dari daftar
+.listgroups - Lihat grup terdaftar
+
+*Moderasi*
+.warn @user - Beri peringatan
+.kick @user - Keluarkan anggota
+.ban @user - Blokir anggota permanen
+.unban @user - Hapus blokir
+.warns - Lihat daftar blokir
+
+*Sistem*
+.self - Mode sendiri (hanya owner)
+.public - Mode publik
+.menu - Tampilkan menu ini`
+
+        if (set.stealth) {
+            menu += '\n\nMode siluman sedang AKTIF. Menu disembunyikan dari pengguna biasa.'
+        }
     }
 
     await m.reply(menu)
