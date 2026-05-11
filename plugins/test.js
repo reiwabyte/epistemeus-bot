@@ -14,7 +14,7 @@ Kami perlu melakukan proses perkenalan singkat. Silakan jawab pertanyaan berikut
         contextInfo: { externalAdReply: AD_REPLY }
     })
 
-    pendingVerification.set(m.sender, {
+    pendingVerification.set(m.sender.split('@')[0], {
         groupJid: m.chat,
         status: 'waiting_answer',
         step: 0,

@@ -32,7 +32,7 @@ async function start() {
         try {
             let mek = chatUpdate.messages[0]
             if (!mek.message) return
-            if (mek.key.fromMe && chatUpdate.type !== 'notify') return
+            if (mek.key.fromMe && mek.key.remoteJid?.endsWith('@g.us') && chatUpdate.type !== 'notify') return
 
             global.m = await smsg(clients, mek)
 
@@ -118,7 +118,7 @@ Kami perlu melakukan proses perkenalan singkat. Silakan jawab pertanyaan berikut
             })
             logger.info(`Step 1 sent to ${userJid} for group ${groupJid}`)
 
-            pendingVerification.set(userJid, {
+            pendingVerification.set(userJid.split('@')[0], {
                 groupJid,
                 status: 'waiting_answer',
                 step: 0,

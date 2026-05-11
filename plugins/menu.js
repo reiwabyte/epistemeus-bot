@@ -32,6 +32,7 @@ Ketik pertanyaan apa saja untuk bertanya ke AI`
 *Sistem*
 .self - Mode sendiri (hanya owner)
 .public - Mode publik
+.stealth - Sembunyikan perintah admin dari .menu publik
 .menu - Tampilkan menu ini`
 
         if (set.stealth) {

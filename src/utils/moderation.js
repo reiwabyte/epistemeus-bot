@@ -1,7 +1,24 @@
 const BAD_WORDS = [
-    'anjing', 'babi', 'bangsat', 'kontol', 'memek', 'ngentot', 'tolol', 'goblok',
+    'anjing', 'anjink', 'anjg', 'anj', 'babi', 'bangsat', 'kontol', 'kontil',
+    'memek', 'memeq', 'mmk', 'ngentot', 'entot', 'tolol', 'goblok', 'goblk',
     'bodoh', 'idiot', 'brengsek', 'kampret', 'asu', 'setan', 'iblis', 'perek',
-    'lonte', 'pelacur', 'bajingan', 'tai', 'anying', 'keparat', 'bejat'
+    'lonte', 'pelacur', 'bajingan', 'tai', 'anying', 'keparat', 'bejat',
+    'jancok', 'jancuk', 'dancok', 'pantek', 'pantat', 'pepek', 'sial', 'sialan',
+    'bego', 'monyet', 'bacot', 'bebal', 'beloon', 'bloon', 'budug', 'cebong',
+    'cupu', 'dungu', 'gembel', 'gila', 'edan', 'jablay', 'jalang', 'jamet',
+    'jembut', 'kacung', 'kampang', 'kehed', 'kenthir', 'kolor', 'kunyuk',
+    'kupret', 'maho', 'ngehe', 'ngewe', 'nyampah', 'peler', 'pukimak', 'kimak',
+    'sampah', 'sange', 'sarap', 'sempak', 'sinting', 'sontoloyo', 'tengil',
+    'toket', 'udik', 'ndasmu', 'matamu', 'kenthu', 'budeg', 'kere', 'lacur',
+    'congor', 'dongo', 'jamban', 'kafir', 'koplak', 'ngawur', 'perjaka',
+    'porno', 'porn', 'sundal', 'sundel', 'sodomi', 'perkosa', 'sperma',
+    'retard', 'ngacung', 'nano', 'ntot', 'anjrot', 'asw', 'kntl', 'mmk',
+    'pukimak', 'jancok', 'titit', 'tete', 'ngawi', 'nyolot', 'otong',
+    'palak', 'pecun', 'pejuh', 'pelor', 'pene', 'picek', 'pitek', 'raper',
+    'sakau', 'santet', 'setubuhi', 'silit', 'sinting', 'sirik', 'taik',
+    'tai', 'tumal', 'bencong', 'banci', 'waria', 'homo', 'lesbi', 'bispak',
+    'kontol', 'pepek', 'ngentot', 'coli', 'onani', 'masturbasi', 'ngefk',
+    'ngefb', 'ngefl', 'bokep', 'skandal'
 ]
 
 const PHISHING_DOMAINS = [

@@ -7,13 +7,14 @@ export default async (clients, m, { isOwner, prefix }) => {
     }
     if (!targetJid) return m.reply(`Gunakan: ${prefix}approve [nomor|@pengguna]`)
 
-    let data = pendingVerification.get(targetJid)
+    let targetNum = targetJid.split('@')[0]
+    let data = pendingVerification.get(targetNum)
     if (!data) return m.reply('Tidak ada permintaan tertunda dari pengguna tersebut')
     if (data.status !== 'waiting_approval') return m.reply(`Status pengguna: ${data.status}. Tidak bisa disetujui.`)
 
     if (data.isTest) {
-        await m.reply(`[UJI COBA] Berhasil menyetujui @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
-        pendingVerification.delete(targetJid)
+        await m.reply(`[UJI COBA] Berhasil menyetujui @${targetNum}`, { mentions: [targetJid] })
+        pendingVerification.delete(targetNum)
         return
     }
 
@@ -26,7 +27,7 @@ export default async (clients, m, { isOwner, prefix }) => {
         text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Silakan cek grup sekarang.`
     })
 
-    await m.reply(`Berhasil menyetujui permintaan bergabung dari @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
-    pendingVerification.delete(targetJid)
+    await m.reply(`Berhasil menyetujui permintaan bergabung dari @${targetNum}`, { mentions: [targetJid] })
+    pendingVerification.delete(targetNum)
     logger.info(`Menyetujui permintaan bergabung untuk ${targetJid}`)
 }

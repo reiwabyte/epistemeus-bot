@@ -7,12 +7,13 @@ export default async (clients, m, { isOwner, prefix }) => {
     }
     if (!targetJid) return m.reply(`Gunakan: ${prefix}reject [nomor|@pengguna]`)
 
-    let data = pendingVerification.get(targetJid)
+    let targetNum = targetJid.split('@')[0]
+    let data = pendingVerification.get(targetNum)
     if (!data) return m.reply('Tidak ada permintaan tertunda dari pengguna tersebut')
 
     if (data.isTest) {
-        await m.reply(`[UJI COBA] Berhasil menolak @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
-        pendingVerification.delete(targetJid)
+        await m.reply(`[UJI COBA] Berhasil menolak @${targetNum}`, { mentions: [targetJid] })
+        pendingVerification.delete(targetNum)
         return
     }
 
@@ -25,7 +26,7 @@ export default async (clients, m, { isOwner, prefix }) => {
         text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi formulir.`
     })
 
-    await m.reply(`Berhasil menolak permintaan bergabung dari @${targetJid.split('@')[0]}`, { mentions: [targetJid] })
-    pendingVerification.delete(targetJid)
+    await m.reply(`Berhasil menolak permintaan bergabung dari @${targetNum}`, { mentions: [targetJid] })
+    pendingVerification.delete(targetNum)
     logger.info(`Menolak permintaan bergabung untuk ${targetJid}`)
 }

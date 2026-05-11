@@ -115,8 +115,9 @@ export default async (clients, m) => {
 
             if (buttonId.startsWith('step5_')) {
                 let answer = buttonParams.display_text || 'Tidak'
-                if (!pendingVerification.has(m.sender)) return
-                let data = pendingVerification.get(m.sender)
+                let phone = getPhone(m.sender)
+                if (!pendingVerification.has(phone)) return
+                let data = pendingVerification.get(phone)
                 if (data.status !== 'waiting_answer' || data.step !== 4) return
 
                 if (!data.answers) data.answers = []
@@ -128,7 +129,7 @@ export default async (clients, m) => {
 
                 data.step = 5
                 await sendQuestion(clients, m.chat, 5, groupName)
-                pendingVerification.set(m.sender, data)
+                pendingVerification.set(phone, data)
                 return
             }
 
@@ -136,7 +137,7 @@ export default async (clients, m) => {
                 let isApprove = buttonId.startsWith('approve_')
                 let targetNum = buttonId.replace(isApprove ? 'approve_' : 'reject_', '')
                 let targetJid = targetNum + '@s.whatsapp.net'
-                let data = pendingVerification.get(targetJid)
+                let data = pendingVerification.get(targetNum)
 
                 if (!data) {
                     await clients.sendMessage(m.chat, { text: 'Tidak ada permintaan tertunda dari pengguna tersebut (mungkin sudah diproses)' })
@@ -148,7 +149,7 @@ export default async (clients, m) => {
                 }
                 if (data.isTest) {
                     await clients.sendMessage(m.chat, { text: `[UJI COBA] Berhasil ${isApprove ? 'menerima' : 'menolak'} @${targetNum}`, mentions: [targetJid] })
-                    pendingVerification.delete(targetJid)
+                    pendingVerification.delete(targetNum)
                     return
                 }
 
@@ -163,7 +164,7 @@ export default async (clients, m) => {
                 }
 
                 await clients.sendMessage(m.chat, { text: `Berhasil ${isApprove ? 'menerima' : 'menolak'} @${targetNum}`, mentions: [targetJid] })
-                pendingVerification.delete(targetJid)
+                pendingVerification.delete(targetNum)
                 logger.info(`${isApprove ? 'Menyetujui' : 'Menolak'} permintaan bergabung untuk ${targetJid} melalui tombol`)
                 return
             }
@@ -190,8 +191,9 @@ export default async (clients, m) => {
             cmd = body.trim().split(/ +/)[0]?.toLowerCase() || ''
         }
 
-        if (pendingVerification.has(m.sender)) {
-            let data = pendingVerification.get(m.sender)
+        let phone = getPhone(m.sender)
+        if (pendingVerification.has(phone)) {
+            let data = pendingVerification.get(phone)
             if (data.status === 'waiting_karya') {
                 if (isGroup && !data.isTest) return
 
@@ -202,7 +204,7 @@ export default async (clients, m) => {
                         text: 'Terimakasih! Jawaban dan karya kamu sudah diterima dan akan ditinjau oleh admin. Mohon tunggu ya',
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
-                    pendingVerification.set(m.sender, data)
+                    pendingVerification.set(phone, data)
                     logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                     return
                 }
@@ -214,7 +216,7 @@ export default async (clients, m) => {
                         text: 'Terimakasih! Jawaban kamu sudah diterima dan akan ditinjau oleh admin. Mohon tunggu ya',
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
-                    pendingVerification.set(m.sender, data)
+                    pendingVerification.set(phone, data)
                     logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                     return
                 }
@@ -252,7 +254,7 @@ export default async (clients, m) => {
                     text: 'Karya diterima. Kirim lagi jika masih ada, atau ketik "selesai" jika sudah selesai.',
                     contextInfo: { externalAdReply: AD_REPLY }
                 })
-                pendingVerification.set(m.sender, data)
+                pendingVerification.set(phone, data)
                 return
             }
 
@@ -270,7 +272,7 @@ export default async (clients, m) => {
 
                 if (data.step < STEP_QUESTIONS.length) {
                     await sendQuestion(clients, m.chat, data.step, groupName)
-                    pendingVerification.set(m.sender, data)
+                    pendingVerification.set(phone, data)
                     return
                 }
 
@@ -281,7 +283,7 @@ export default async (clients, m) => {
                         text: 'Izinkan kami melihat karya ilmiah anda. Silakan kirim berkas (foto, PDF, Word) atau tautan web.\n\nKetik "selesai" jika sudah selesai mengirim.',
                         contextInfo: { externalAdReply: AD_REPLY }
                     })
-                    pendingVerification.set(m.sender, data)
+                    pendingVerification.set(phone, data)
                     return
                 }
 
@@ -291,7 +293,7 @@ export default async (clients, m) => {
                     text: 'Terimakasih! Jawaban kamu sudah diterima dan akan ditinjau oleh admin. Mohon tunggu ya',
                     contextInfo: { externalAdReply: AD_REPLY }
                 })
-                pendingVerification.set(m.sender, data)
+                pendingVerification.set(phone, data)
                 logger.info(`Formulir selesai untuk ${m.sender}, diteruskan ke owner`)
                 return
             }
