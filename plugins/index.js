@@ -196,6 +196,16 @@ export default async (clients, m) => {
         let phone = getPhone(m.sender)
         if (pendingVerification.has(phone)) {
             let data = pendingVerification.get(phone)
+            if (cmd && commands[cmd]) {
+                if (cmd === 'cancel') {
+                    pendingVerification.delete(phone)
+                    await m.reply('Proses formulir dibatalkan')
+                    logger.info(`Formulir dibatalkan untuk ${m.sender}`)
+                    return
+                }
+                await commands[cmd](clients, m, { body, prefix, cmd, isOwner, isGroup })
+                return
+            }
             if (data.status === 'waiting_karya') {
                 if (isGroup && !data.isTest) return
 

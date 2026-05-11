@@ -46,6 +46,7 @@ global.AD_REPLY = {
     body: 'Forum Diskusi Ilmiah',
     mediaType: 1,
     sourceUrl: THUMB_URL,
+    mediaUrl: THUMB_URL,
     showAdAttribution: false,
     renderLargerThumbnail: true,
     thumbnail: null
