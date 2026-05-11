@@ -3,6 +3,7 @@ import * as bail from 'ourin-baileys'
 import chalk from 'chalk'
 import logger from './utils/logger.js'
 import { db, reload, saveDb } from './utils/database.js'
+import sharp from 'sharp'
 
 let ownerNumbers = (process.env.OWNER_NOMOR || '6283891882373').split(',').map(n => n.trim())
 
@@ -53,5 +54,13 @@ global.AD_REPLY = {
 }
 
 try {
-    fetch(THUMB_URL).then(r => r.ok && r.arrayBuffer()).then(buf => { if (buf) global.AD_REPLY.thumbnail = Buffer.from(buf) }).catch(() => {})
+    fetch(THUMB_URL).then(r => {
+        if (!r.ok) throw new Error('fetch failed')
+        return r.arrayBuffer()
+    }).then(buf => {
+        if (!buf) return
+        return sharp(Buffer.from(buf)).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+    }).then(buf => {
+        if (buf) global.AD_REPLY.thumbnail = buf
+    }).catch(() => {})
 } catch (e) {}
