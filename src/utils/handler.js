@@ -1,14 +1,58 @@
 const groupMetaCache = new Map()
-const CACHE_TTL = 5 * 60 * 1000
+const CACHE_TTL = 10 * 60 * 1000
+const STALE_TTL = 30 * 60 * 1000
 
 function getCached(jid) {
     const entry = groupMetaCache.get(jid)
-    if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data
+    if (!entry) return undefined
+    const age = Date.now() - entry.ts
+    if (age < CACHE_TTL) return entry.data
+    if (age < STALE_TTL) return entry.data
     return undefined
 }
 
 function setCached(jid, data) {
     groupMetaCache.set(jid, { data, ts: Date.now() })
+}
+
+function updateParticipantsCache(id, participants, action) {
+    const cached = groupMetaCache.get(id)
+    if (!cached?.data?.participants) return false
+
+    switch (action) {
+        case 'add':
+            for (const p of participants) {
+                if (!cached.data.participants.some(x => x.id === p)) {
+                    cached.data.participants.push({ id: p })
+                }
+            }
+            break
+        case 'remove':
+            cached.data.participants = cached.data.participants.filter(x => !participants.includes(x.id))
+            break
+        case 'promote':
+            for (const p of participants) {
+                const m = cached.data.participants.find(x => x.id === p)
+                if (m) m.admin = 'admin'
+            }
+            break
+        case 'demote':
+            for (const p of participants) {
+                const m = cached.data.participants.find(x => x.id === p)
+                if (m) m.admin = null
+            }
+            break
+    }
+    cached.ts = Date.now()
+    return true
+}
+
+function updateMetadataCache(id, updates) {
+    const cached = groupMetaCache.get(id)
+    if (!cached?.data) return false
+    Object.assign(cached.data, updates)
+    cached.ts = Date.now()
+    return true
 }
 
 export async function clientsConfig(opts) {
@@ -39,25 +83,33 @@ export async function clientsConfig(opts) {
         return jid
     }
 
-    clients.ev.on('group-participants.update', async ({ id }) => {
+    clients.ev.on('group-participants.update', async ({ id, participants, action }) => {
         if (!id || id === 'status@broadcast') return
-        try {
-            let data = await clients.groupMetadata(id)
-            setCached(id, data)
-            clients.chats[id] = data
-            await new Promise(r => setTimeout(r, 500))
-        } catch {}
+        const updated = updateParticipantsCache(id, participants, action)
+        if (updated) {
+            clients.chats[id] = groupMetaCache.get(id).data
+        } else {
+            try {
+                let data = await clients.groupMetadata(id)
+                setCached(id, data)
+                clients.chats[id] = data
+            } catch {}
+        }
     })
 
     clients.ev.on('groups.update', async (updates) => {
         for (let u of updates) {
             if (!u.id || u.id === 'status@broadcast' || !u.id.endsWith('@g.us')) continue
-            try {
-                let data = await clients.groupMetadata(u.id)
-                setCached(u.id, data)
-                clients.chats[u.id] = data
-                await new Promise(r => setTimeout(r, 500))
-            } catch {}
+            const updated = updateMetadataCache(u.id, u)
+            if (updated) {
+                clients.chats[u.id] = groupMetaCache.get(u.id).data
+            } else {
+                try {
+                    let data = await clients.groupMetadata(u.id)
+                    setCached(u.id, data)
+                    clients.chats[u.id] = data
+                } catch {}
+            }
         }
     })
 
@@ -73,11 +125,18 @@ export async function smsg(clients, m) {
         m.id = m.key.id
         m.from = m.key.remoteJid.startsWith('status') ? bail.jidNormalizedUser(m.key?.participant || m.participant) : bail.jidNormalizedUser(m.key.remoteJid)
         m.isBaileys = m.id?.startsWith('3EB0')
-        m.chat = clients?.getJid(m.key?.remoteJidAlt?.endsWith('@s.whatsapp.net') ? m.key.remoteJidAlt : m.key?.remoteJid)
-        m.owner = clients.getJid(bail.jidNormalizedUser(owner.no[0] + '@s.whatsapp.net'))
+        m.chat = m.key?.remoteJidAlt?.endsWith('@s.whatsapp.net') ? m.key.remoteJidAlt : m.key?.remoteJid
+        m.owner = bail.jidNormalizedUser(owner.no[0] + '@s.whatsapp.net')
         m.fromMe = m.key.fromMe
         m.isGroup = m.chat?.endsWith('@g.us')
-        m.sender = clients.getJid(bail.jidNormalizedUser(m.key.participantAlt || m.key.participantPn || m.key.participant || m.chat))
+
+        if (m.isGroup) {
+            let raw = m.key.participantAlt || m.key.participantPn || m.key.participant
+            if (raw && !raw.includes('@')) raw += '@s.whatsapp.net'
+            m.sender = clients.getJid(bail.jidNormalizedUser(raw || m.chat))
+        } else {
+            m.sender = m.chat
+        }
     }
 
     if (m.message) {

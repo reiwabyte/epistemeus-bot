@@ -1,8 +1,9 @@
+console.clear()
 import './src/config.js'
 import pino from 'pino'
 import { clientsConfig, smsg } from './src/utils/handler.js'
 import logger from './src/utils/logger.js'
-import caseHandler from './case.js'
+import caseHandler from './plugins/index.js'
 
 async function start() {
     let { state, saveCreds } = await bail.useMultiFileAuthState(pair.sesi)
@@ -30,7 +31,10 @@ async function start() {
         try {
             let mek = chatUpdate.messages[0]
             if (!mek.message) return
+            if (mek.key.fromMe && chatUpdate.type !== 'notify') return
+
             global.m = await smsg(clients, mek)
+
             if (set.self && ![m.owner, clients.decodeJid(clients.user.id)].includes(m.sender)) return
             await caseHandler(clients, m)
             logger.print(m)
@@ -60,6 +64,70 @@ async function start() {
     })
 
     clients.ev.on('creds.update', saveCreds)
+
+    clients.ev.on('group.join-request', async (data) => {
+        try {
+            let { id: rawGroupJid, participant: requesterLid, participantPn, action, method } = data
+            if (!rawGroupJid) return
+            if (action === 'revoked' || action === 'rejected') return
+
+            logger.info(`Join request event: group=${rawGroupJid} action=${action} method=${method} lid=${requesterLid} pn=${participantPn}`)
+
+            let groupJid = bail.jidNormalizedUser(rawGroupJid)
+            let isManaged = db.groups?.some(g => bail.jidNormalizedUser(g.id) === groupJid)
+            if (!isManaged) {
+                logger.info(`Group ${groupJid} not in managed list, skipping`)
+                return
+            }
+
+            let userJid = participantPn
+            if (userJid && !userJid.includes('@')) userJid += '@s.whatsapp.net'
+            if (!userJid && requesterLid) {
+                userJid = clients.getJid(requesterLid)
+                if (!userJid || userJid === requesterLid) {
+                    logger.warn(`Cannot resolve user JID from LID: ${requesterLid}`)
+                    return
+                }
+            }
+            if (!userJid) {
+                logger.warn('No user JID available for join request')
+                return
+            }
+            userJid = bail.jidNormalizedUser(userJid)
+
+            let userNum = userJid.split('@')[0]
+            if (db.banned?.includes(userNum)) {
+                logger.info(`Banned user ${userNum} tried to join ${groupJid}, rejecting`)
+                await clients.groupRequestParticipantsUpdate(groupJid, [userJid], 'reject')
+                return
+            }
+
+            let groupData = db.groups.find(g => bail.jidNormalizedUser(g.id) === groupJid)
+            let groupName = groupData?.name || 'Grup'
+
+            let opening = `Halo! Sebelumnya kami mengucapkan terimakasih telah meminta bergabung ke grup ${groupName}.
+
+Kami perlu melakukan proses perkenalan singkat. Silakan jawab pertanyaan berikut satu per satu.
+
+1. Nama / Nama Panggilan / Nama Samaran:`
+
+            await clients.sendMessage(userJid, {
+                text: opening,
+                contextInfo: { externalAdReply: AD_REPLY }
+            })
+            logger.info(`Step 1 sent to ${userJid} for group ${groupJid}`)
+
+            pendingVerification.set(userJid, {
+                groupJid,
+                status: 'waiting_answer',
+                step: 0,
+                answers: [],
+                timestamp: Date.now()
+            })
+        } catch (e) {
+            console.error('Error handling join request:', e)
+        }
+    })
 
     setInterval(() => {
         let mem = process.memoryUsage().rss / 1024 / 1024

@@ -4,10 +4,11 @@
     "type": "module",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js"
+        "start": "node index.js",
+        "dev": "node --watch index.js"
     },
     "dependencies": {
-        "baileys": "github:miuujs/baileys",
+        "ourin-baileys": "^0.7.14",
         "chalk": "^5.4.1",
         "pino": "^9.6.0"
     }
