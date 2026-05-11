@@ -18,6 +18,8 @@ import unbanCmd from './unban.js'
 import warnsCmd from './warns.js'
 import stealthCmd from './stealth.js'
 
+const getPhone = (jid) => jid?.split('@')[0]
+
 const commands = {
     self: selfCmd, public: publicCmd, test: testCmd,
     setgroup: setgroupCmd, delgroup: delgroupCmd, listgroups: listgroupsCmd,
