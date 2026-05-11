@@ -24,6 +24,17 @@ const commands = {
     warn: warnCmd, kick: kickCmd, ban: banCmd, unban: unbanCmd, warns: warnsCmd
 }
 
+function getPending(sender, chat) {
+    let d = pendingVerification.get(sender)
+    if (d) return d
+    if (chat && chat !== sender) d = pendingVerification.get(chat)
+    if (d) return d
+    for (let [jid, data] of pendingVerification) {
+        if (bail.areJidsSameUser(jid, sender)) return data
+    }
+    return null
+}
+
 const STEP_QUESTIONS = [
     '1. Nama / Nama Panggilan / Nama Samaran:',
     '2. Umur:',

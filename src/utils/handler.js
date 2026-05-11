@@ -125,15 +125,21 @@ export async function smsg(clients, m) {
         m.id = m.key.id
         m.from = m.key.remoteJid.startsWith('status') ? bail.jidNormalizedUser(m.key?.participant || m.participant) : bail.jidNormalizedUser(m.key.remoteJid)
         m.isBaileys = m.id?.startsWith('3EB0')
-        m.chat = m.key?.remoteJidAlt?.endsWith('@s.whatsapp.net') ? m.key.remoteJidAlt : m.key?.remoteJid
+        m.chat = m.key?.remoteJidAlt || m.key?.remoteJid
         m.owner = bail.jidNormalizedUser(owner.no[0] + '@s.whatsapp.net')
         m.fromMe = m.key.fromMe
         m.isGroup = m.chat?.endsWith('@g.us')
 
         if (m.isGroup) {
             let raw = m.key.participantAlt || m.key.participantPn || m.key.participant
+            if (raw && raw.endsWith('@lid') && m.key.participant && !m.key.participant.endsWith('@lid')) raw = m.key.participant
             if (raw && !raw.includes('@')) raw += '@s.whatsapp.net'
-            m.sender = clients.getJid(bail.jidNormalizedUser(raw || m.chat))
+            if (raw && raw.endsWith('@lid')) {
+                let resolved = clients.getJid(raw)
+                m.sender = (resolved && resolved !== raw) ? resolved : raw
+            } else {
+                m.sender = raw ? bail.jidNormalizedUser(raw) : m.chat
+            }
         } else {
             m.sender = m.chat
         }
