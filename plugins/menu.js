@@ -1,5 +1,5 @@
 export default async (clients, m, { isOwner }) => {
-    let ad = { ...AD_REPLY, thumbnail: global.MENU_THUMB, renderLargerThumbnail: true, mediaUrl: process.env.THUMB_URL || 'https://files.covenant.sbs/bc5d34c2-ca8d-4c94-a69c-1e48d0ded206.jpeg' }
+    let ad = { ...AD_REPLY, renderLargerThumbnail: true, mediaUrl: process.env.THUMB_URL || 'https://files.covenant.sbs/6e029a06-04b3-413f-8f48-d97440a3a279.jpeg' }
 
     if (!isOwner) {
         await clients.sendMessage(m.chat, {
@@ -18,7 +18,6 @@ export default async (clients, m, { isOwner }) => {
                                 {
                                     title: 'Formulir Pendaftaran',
                                     rows: [
-                                        { title: 'Test Formulir', id: '.test', description: 'Simulasi formulir pendaftaran' },
                                         { title: 'Batalkan Formulir', id: '.cancel', description: 'Batalkan proses yang berjalan' }
                                     ]
                                 },

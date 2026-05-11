@@ -238,19 +238,10 @@ export default async (clients, m) => {
                 let mediaTypes = ['imageMessage', 'videoMessage', 'documentMessage', 'audioMessage']
                 if (mediaTypes.includes(m.mtype)) {
                     try {
-                        let stream = await bail.downloadContentFromMessage(m.message[m.mtype], m.mtype.replace('Message', '').toLowerCase())
-                        let buffer = Buffer.from([])
-                        for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
+                        let forwardContent = bail.generateForwardMessageContent(m, true)
+                        await clients.sendMessage(m.owner, forwardContent)
                         let fileName = m.message[m.mtype]?.fileName || 'berkas'
-                        let mimetype = m.message[m.mtype]?.mimetype || 'application/octet-stream'
                         let caption = m.message[m.mtype]?.caption || ''
-
-                        await clients.sendMessage(m.owner, {
-                            [m.mtype.replace('Message', '').toLowerCase()]: buffer,
-                            mimetype,
-                            fileName,
-                            caption: `[KARYA dari ${m.sender.split('@')[0]}] ${caption}`.trim()
-                        })
                         data.karyaFiles.push({ type: m.mtype, fileName, caption, time: Date.now() })
                     } catch (e) {
                         logger.error('Gagal meneruskan karya:', e)

@@ -48,17 +48,24 @@ global.AD_REPLY = {
     mediaType: 1,
     sourceUrl: THUMB_URL,
     showAdAttribution: false,
-    renderLargerThumbnail: false
+    renderLargerThumbnail: true,
+    thumbnail: null
 }
 
 global.MENU_THUMB = null
 
-fetch(THUMB_URL).then(r => {
-    if (!r.ok) throw new Error()
-    return r.arrayBuffer()
-}).then(buf => {
-    if (!buf) throw new Error()
-    return sharp(Buffer.from(buf)).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
-}).then(buf => {
-    if (buf) global.MENU_THUMB = buf
-}).catch(() => {})
+export async function loadThumbnail() {
+    try {
+        let resp = await fetch(THUMB_URL)
+        if (!resp.ok) throw new Error('fetch failed')
+        let buf = await resp.arrayBuffer()
+        if (!buf) throw new Error('no buffer')
+        let thumb = await sharp(Buffer.from(buf)).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+        if (thumb) {
+            global.MENU_THUMB = thumb
+            global.AD_REPLY.thumbnail = thumb
+        }
+    } catch (e) {
+        console.error('Gagal load thumbnail:', e.message)
+    }
+}

@@ -1,12 +1,14 @@
 console.clear()
 import 'dotenv/config'
 import './src/config.js'
+import { loadThumbnail } from './src/config.js'
 import pino from 'pino'
 import { clientsConfig, smsg } from './src/utils/handler.js'
 import logger from './src/utils/logger.js'
 import caseHandler from './plugins/index.js'
 
 async function start() {
+    await loadThumbnail()
     let { state, saveCreds } = await bail.useMultiFileAuthState(pair.sesi)
     global.clients = await clientsConfig({
         logger: pino({ level: 'silent' }),
