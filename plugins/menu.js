@@ -3,26 +3,36 @@ export default async (clients, m, { isOwner }) => {
 
     if (!isOwner) {
         await clients.sendMessage(m.chat, {
-            text: '*Epistemeia Bot - Menu Publik*',
-            footer: 'Pilih perintah di bawah',
-            title: 'Menu Publik',
-            buttonText: 'Buka Menu',
-            sections: [
-                {
-                    title: 'Formulir Pendaftaran',
-                    rows: [
-                        { title: '.test', rowId: '.test', description: 'Simulasi formulir pendaftaran' },
-                        { title: '.cancel', rowId: '.cancel', description: 'Batalkan proses formulir' }
-                    ]
-                },
-                {
-                    title: 'Lainnya',
-                    rows: [
-                        { title: '.menu', rowId: '.menu', description: 'Tampilkan menu ini' }
-                    ]
-                }
-            ],
-            contextInfo: { externalAdReply: ad }
+            text: 'Pilih perintah di bawah',
+            contextInfo: { externalAdReply: ad },
+            interactiveMessage: {
+                title: 'Menu Publik',
+                footer: 'Epistemeia Bot',
+                header: 'Bot Menu',
+                buttons: [
+                    {
+                        name: 'single_select',
+                        buttonParamsJson: JSON.stringify({
+                            title: 'Menu Publik',
+                            sections: [
+                                {
+                                    title: 'Formulir Pendaftaran',
+                                    rows: [
+                                        { title: 'Test Formulir', id: '.test', description: 'Simulasi formulir pendaftaran' },
+                                        { title: 'Batalkan Formulir', id: '.cancel', description: 'Batalkan proses yang berjalan' }
+                                    ]
+                                },
+                                {
+                                    title: 'Lainnya',
+                                    rows: [
+                                        { title: 'Menu', id: '.menu', description: 'Tampilkan menu ini' }
+                                    ]
+                                }
+                            ]
+                        })
+                    }
+                ]
+            }
         })
         return
     }
@@ -31,49 +41,59 @@ export default async (clients, m, { isOwner }) => {
     let stealthStatus = set.stealth ? 'AKTIF' : 'Nonaktif'
 
     await clients.sendMessage(m.chat, {
-        text: `*Epistemeia Bot - Panel Admin*\nAI: ${aiStatus} | Stealth: ${stealthStatus}`,
-        footer: 'Ketik manual jika ada parameter (reply/mention)',
-        title: 'Panel Admin',
-        buttonText: 'Buka Menu',
-        sections: [
-            {
-                title: 'Formulir Pendaftaran',
-                rows: [
-                    { title: '.test', rowId: '.test', description: 'Simulasi formulir' },
-                    { title: '.cancel', rowId: '.cancel', description: 'Batalkan formulir' },
-                    { title: '.cekpending', rowId: '.cekpending', description: 'Lihat pendaftar tertunda' },
-                    { title: '.approve', rowId: '.approve', description: 'Setujui pendaftar' },
-                    { title: '.reject', rowId: '.reject', description: 'Tolak pendaftar' }
-                ]
-            },
-            {
-                title: 'Manajemen Grup',
-                rows: [
-                    { title: '.setgroup', rowId: '.setgroup', description: 'Daftarkan grup ini' },
-                    { title: '.delgroup', rowId: '.delgroup', description: 'Hapus grup dari daftar' },
-                    { title: '.listgroups', rowId: '.listgroups', description: 'Lihat grup terdaftar' }
-                ]
-            },
-            {
-                title: 'Moderasi Anggota',
-                rows: [
-                    { title: '.warn', rowId: '.warn', description: 'Beri peringatan' },
-                    { title: '.kick', rowId: '.kick', description: 'Keluarkan anggota' },
-                    { title: '.ban', rowId: '.ban', description: 'Blokir permanen' },
-                    { title: '.unban', rowId: '.unban', description: 'Buka blokir' },
-                    { title: '.warns', rowId: '.warns', description: 'Lihat daftar blokir' }
-                ]
-            },
-            {
-                title: 'Mode Bot',
-                rows: [
-                    { title: '.self', rowId: '.self', description: 'Mode sendiri (owner only)' },
-                    { title: '.public', rowId: '.public', description: 'Mode publik' },
-                    { title: '.stealth', rowId: '.stealth', description: 'Sembunyikan menu admin' },
-                    { title: '.menu', rowId: '.menu', description: 'Tampilkan menu ini' }
-                ]
-            }
-        ],
-        contextInfo: { externalAdReply: ad }
+        text: `AI: ${aiStatus} | Stealth: ${stealthStatus}\n\nKetik manual jika ada parameter (reply/mention)`,
+        contextInfo: { externalAdReply: ad },
+        interactiveMessage: {
+            title: 'Panel Admin',
+            footer: 'Epistemeia Bot',
+            header: 'Bot Menu',
+            buttons: [
+                {
+                    name: 'single_select',
+                    buttonParamsJson: JSON.stringify({
+                        title: 'Panel Admin',
+                        sections: [
+                            {
+                                title: 'Formulir Pendaftaran',
+                                rows: [
+                                    { title: 'Test Formulir', id: '.test', description: 'Simulasi formulir' },
+                                    { title: 'Batalkan', id: '.cancel', description: 'Batalkan formulir' },
+                                    { title: 'Cek Pending', id: '.cekpending', description: 'Lihat pendaftar tertunda' },
+                                    { title: 'Setujui', id: '.approve', description: 'Setujui pendaftar' },
+                                    { title: 'Tolak', id: '.reject', description: 'Tolak pendaftar' }
+                                ]
+                            },
+                            {
+                                title: 'Manajemen Grup',
+                                rows: [
+                                    { title: 'Daftarkan Grup', id: '.setgroup', description: 'Daftarkan grup ini' },
+                                    { title: 'Hapus Grup', id: '.delgroup', description: 'Hapus grup dari daftar' },
+                                    { title: 'Lihat Grup', id: '.listgroups', description: 'Lihat grup terdaftar' }
+                                ]
+                            },
+                            {
+                                title: 'Moderasi',
+                                rows: [
+                                    { title: 'Peringatan', id: '.warn', description: 'Beri peringatan anggota' },
+                                    { title: 'Keluarkan', id: '.kick', description: 'Keluarkan anggota' },
+                                    { title: 'Blokir', id: '.ban', description: 'Blokir permanen' },
+                                    { title: 'Buka Blokir', id: '.unban', description: 'Buka blokir' },
+                                    { title: 'Daftar Blokir', id: '.warns', description: 'Lihat blokir/peringatan' }
+                                ]
+                            },
+                            {
+                                title: 'Mode',
+                                rows: [
+                                    { title: 'Mode Sendiri', id: '.self', description: 'Hanya owner' },
+                                    { title: 'Mode Publik', id: '.public', description: 'Semua orang' },
+                                    { title: 'Siluman', id: '.stealth', description: 'Sembunyikan menu admin' },
+                                    { title: 'Menu', id: '.menu', description: 'Tampilkan menu ini' }
+                                ]
+                            }
+                        ]
+                    })
+                }
+            ]
+        }
     })
 }
