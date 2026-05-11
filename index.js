@@ -32,7 +32,7 @@ async function start() {
         try {
             let mek = chatUpdate.messages[0]
             if (!mek.message) return
-            if (mek.key.fromMe && mek.key.remoteJid?.endsWith('@g.us') && chatUpdate.type !== 'notify') return
+            if (mek.key.fromMe && mek.key.id?.startsWith('3EB0')) return
 
             global.m = await smsg(clients, mek)
 
@@ -43,11 +43,6 @@ async function start() {
             console.error(err)
         }
     })
-
-    try {
-        let resp = await fetch('https://files.covenant.sbs/bc5d34c2-ca8d-4c94-a69c-1e48d0ded206.jpeg')
-        if (resp.ok) global.AD_REPLY.thumbnail = Buffer.from(await resp.arrayBuffer())
-    } catch (e) {}
 
     clients.ev.on('connection.update', async update => {
         let { connection, lastDisconnect } = update

@@ -39,12 +39,18 @@ global.start = Date.now()
 global.reloadDb = reload
 global.saveDb = saveDb
 
+const THUMB_URL = process.env.THUMB_URL || 'https://files.covenant.sbs/bc5d34c2-ca8d-4c94-a69c-1e48d0ded206.jpeg'
+
 global.AD_REPLY = {
     title: 'Epistemeia',
     body: 'Forum Diskusi Ilmiah',
     mediaType: 1,
-    sourceUrl: 'https://example.com',
+    sourceUrl: THUMB_URL,
     showAdAttribution: false,
     renderLargerThumbnail: true,
     thumbnail: null
 }
+
+try {
+    fetch(THUMB_URL).then(r => r.ok && r.arrayBuffer()).then(buf => { if (buf) global.AD_REPLY.thumbnail = Buffer.from(buf) }).catch(() => {})
+} catch (e) {}
