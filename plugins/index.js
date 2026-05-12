@@ -10,6 +10,10 @@ import cancelCmd from './cancel.js'
 import menuCmd from './menu.js'
 import banCmd from './ban.js'
 import unbanCmd from './unban.js'
+import warnsCmd from './warns.js'
+import banlistCmd from './banlist.js'
+import aiCmd from './ai.js'
+import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
 
@@ -18,7 +22,9 @@ const commands = {
     setgroup: setgroupCmd, delgroup: delgroupCmd, listgroups: listgroupsCmd,
     approve: approveCmd, reject: rejectCmd, cekpending: cekpendingCmd, cancel: cancelCmd,
     menu: menuCmd,
-    ban: banCmd, unban: unbanCmd
+    ban: banCmd, unban: unbanCmd,
+    warns: warnsCmd, banlist: banlistCmd,
+    ai: aiCmd
 }
 
 const STEP_QUESTIONS = [
@@ -105,7 +111,8 @@ ${formatted}`
 
 export default async (clients, m) => {
     try {
-        let isOwner = m.owner?.includes(m.sender)
+        let phone = (m.sender || '').split('@')[0].replace(/[^0-9]/g, '')
+        let isOwner = owner.no.some(n => n.replace(/[^0-9]/g, '') === phone)
         let isGroup = m.isGroup
 
         let interactiveResponse = m.message?.interactiveResponseMessage?.nativeFlowResponseMessage
@@ -159,6 +166,76 @@ export default async (clients, m) => {
                 logger.info(`${isApprove ? 'Menyetujui' : 'Menolak'} permintaan bergabung untuk ${targetJid} melalui tombol`)
                 return
             }
+
+            function decodeGroupJid(encoded) {
+                return encoded.replace(/_g$/, '@g.us')
+            }
+
+            if (buttonId.startsWith('setgrp_')) {
+                let groupJid = decodeGroupJid(buttonId.slice(7))
+                if (!db.groups) db.groups = []
+                if (db.groups.some(g => g.id === groupJid)) {
+                    await clients.sendMessage(m.chat, { text: 'Grup sudah terdaftar.' })
+                    return
+                }
+                let meta = clients.chats?.[groupJid] || await clients.groupMetadata(groupJid).catch(() => null)
+                let name = meta?.subject || groupJid
+                db.groups.push({ id: groupJid, name })
+                saveDb()
+                await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil didaftarkan!` })
+                logger.info(`Grup terdaftar dari DM: ${groupJid} (${name})`)
+                return
+            }
+
+            if (buttonId.startsWith('delgrp_')) {
+                let groupJid = decodeGroupJid(buttonId.slice(7))
+                let idx = db.groups?.findIndex(g => g.id === groupJid)
+                if (idx === undefined || idx === -1) {
+                    await clients.sendMessage(m.chat, { text: 'Grup tidak ditemukan dalam daftar.' })
+                    return
+                }
+                let name = db.groups[idx].name
+                db.groups.splice(idx, 1)
+                saveDb()
+                await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil dihapus dari daftar.` })
+                logger.info(`Grup dihapus dari DM: ${groupJid}`)
+                return
+            }
+
+            if (buttonId.startsWith('.') && commands[buttonId.slice(1).split(/ +/)[0]]) {
+                let cmdName = buttonId.slice(1).split(/ +/)[0]
+                await commands[cmdName](clients, m, { body: buttonId, prefix: '.', cmd: cmdName, isOwner, isGroup })
+                return
+            }
+
+            if (buttonId.startsWith('grp_')) {
+                let groupJid = decodeGroupJid(buttonId.slice(4))
+                let meta = clients.chats?.[groupJid] || await clients.groupMetadata(groupJid).catch(() => null)
+                if (!meta) {
+                    await clients.sendMessage(m.chat, { text: 'Grup tidak ditemukan.' })
+                    return
+                }
+                let gName = meta.subject || groupJid
+                let isManaged = db.groups?.some(g => g.id === groupJid)
+                let memberCount = meta.participants?.length || '?'
+                let admins = meta.participants?.filter(p => p.admin)?.length || 0
+                let managed = isManaged ? 'TERDAFTAR' : 'BELUM TERDAFTAR'
+
+                let approved = db.history?.filter(h => h.group === gName && h.status === 'approved') || []
+                let rejected = db.history?.filter(h => h.group === gName && h.status === 'rejected') || []
+
+                let info = `*${gName}*\n`
+                info += `Status: ${managed}\n`
+                info += `Anggota: ${memberCount} (${admins} admin)\n`
+                info += `ID: ${groupJid}\n\n`
+                info += `*Riwayat:*\n`
+                info += `Diterima: ${approved.length}\n`
+                info += `Ditolak: ${rejected.length}\n\n`
+                info += `Gunakan perintah di grup untuk mengelola.`
+
+                await clients.sendMessage(m.chat, { text: info })
+                return
+            }
         }
 
         let body = (m?.mtype === 'conversation' ? m?.message?.conversation
@@ -182,7 +259,57 @@ export default async (clients, m) => {
             cmd = body.trim().split(/ +/)[0]?.toLowerCase() || ''
         }
 
-        let phone = getPhone(m.sender)
+        if (isGroup && !isOwner && !m.key.fromMe) {
+            let isManaged = db.groups?.some(g => g.id === m.chat)
+            if (isManaged && body && !cmd) {
+                let groupMeta = clients.chats[m.chat]
+                let isAdmin = groupMeta?.participants?.some(p => p.id === m.sender && (p.admin === 'admin' || p.admin === 'superadmin'))
+                if (!isAdmin) {
+                    let reasons = checkMessage(body, phone)
+                    if (reasons) {
+                        let warnCount = incrementWarning(m.chat, phone, reasons)
+                        saveDb()
+
+                        let reasonText = reasons.map(r => `- ${r}`).join('\n')
+
+                        if (warnCount <= 1) {
+                            await clients.sendMessage(m.chat, {
+                                text: `@${phone}, pesan kamu mengandung:\n${reasonText}\n\n⚠️ *PERINGATAN KE-${warnCount}*\nMohon jaga sopan santun dan etika diskusi dalam grup.\n\n*Konsekuensi:*\n• Peringatan ${warnCount}/3\n• Pelanggaran berikutnya bisa berakibat *dikeluarkan* dari grup.`,
+                                contextInfo: { mentionedJid: [m.sender] }
+                            })
+                            logger.info(`Moderasi: peringatan ke-${warnCount} untuk ${phone} di ${m.chat}: ${reasons.join(', ')}`)
+                        } else if (warnCount === 2) {
+                            await clients.sendMessage(m.chat, {
+                                text: `@${phone}, kamu telah melanggar aturan untuk ke-2 kalinya:\n${reasonText}\n\n⛔ *KICK*: Kamu akan dikeluarkan dari grup.\n\n*Catatan:* Kamu masih bisa meminta bergabung kembali melalui *permintaan bergabung* dan mengisi formulir verifikasi ulang.`,
+                                contextInfo: { mentionedJid: [m.sender] }
+                            })
+                            await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+                            logger.info(`Moderasi: mengeluarkan ${phone} dari ${m.chat} (peringatan ke-2)`)
+                        } else {
+                            if (!db.banned) db.banned = []
+                            if (!db.banned.includes(phone)) {
+                                db.banned.push(phone)
+                                saveDb()
+                            }
+                            await clients.sendMessage(m.chat, {
+                                text: `@${phone}, kamu telah melanggar aturan untuk ke-3 kalinya:\n${reasonText}\n\n🚫 *BAN PERMANEN*: Kamu telah diblokir secara permanen dari semua grup yang dikelola.\n\nKamu *tidak akan bisa* bergabung kembali ke grup ini atau grup lain yang dikelola.`,
+                                contextInfo: { mentionedJid: [m.sender] }
+                            })
+                            await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+                            logger.info(`Moderasi: memblokir permanen ${phone} (peringatan ke-3)`)
+                        }
+
+                        try {
+                            await clients.sendMessage(m.chat, { delete: m.key })
+                        } catch (e) {
+                            logger.warn(`Gagal menghapus pesan: ${e.message}`)
+                        }
+                        return
+                    }
+                }
+            }
+        }
+
         if (pendingVerification.has(phone)) {
             let data = pendingVerification.get(phone)
             if (cmd && commands[cmd]) {

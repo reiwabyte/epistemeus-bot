@@ -1,47 +1,18 @@
 export default async (clients, m, { isOwner, isGroup }) => {
-    if (!isGroup) return
+    if (!isOwner) return
 
     let ad = { ...AD_REPLY }
-
-    if (!isOwner) {
-        let isManaged = db.groups?.some(g => g.id === m.chat)
-        let status = isManaged ? 'Grup Terdaftar' : 'Grup Belum Terdaftar'
-
-        await clients.sendMessage(m.chat, {
-            text: status,
-            contextInfo: { externalAdReply: ad },
-            interactiveMessage: {
-                title: 'Menu Publik',
-                footer: 'Epistemeia Bot',
-                header: 'Bot Menu',
-                buttons: [
-                    {
-                        name: 'single_select',
-                        buttonParamsJson: JSON.stringify({
-                            title: 'Menu Publik',
-                            sections: [
-                                {
-                                    title: 'Formulir Pendaftaran',
-                                    rows: [
-                                        { title: 'Batalkan Formulir', id: '.cancel', description: 'Batalkan proses yang berjalan' }
-                                    ]
-                                }
-                            ]
-                        })
-                    }
-                ]
-            }
-        })
-        return
-    }
 
     let approved = db.history?.filter(h => h.status === 'approved') || []
     let rejected = db.history?.filter(h => h.status === 'rejected') || []
     let recentApproved = approved.slice(-5).reverse()
     let recentRejected = rejected.slice(-5).reverse()
 
-    let isManaged = db.groups?.some(g => g.id === m.chat)
-    let grupInfo = `\n*Grup ini:* ${isManaged ? 'TERDAFTAR' : 'BELUM TERDAFTAR'}\n`
+    let grupInfo = ''
+    if (isGroup) {
+        let isManaged = db.groups?.some(g => g.id === m.chat)
+        grupInfo = `\n*Grup ini:* ${isManaged ? 'TERDAFTAR' : 'BELUM TERDAFTAR'}\n`
+    }
 
     let riwayatText = `*Daftar Peserta*${grupInfo}\n\n`
     riwayatText += `*Diterima:*\n`
@@ -73,8 +44,8 @@ export default async (clients, m, { isOwner, isGroup }) => {
                             {
                                 title: 'Manajemen Grup',
                                 rows: [
-                                    { title: 'Daftarkan Grup', id: '.setgroup', description: 'Daftarkan grup ini' },
-                                    { title: 'Hapus Grup', id: '.delgroup', description: 'Hapus grup dari daftar' },
+                                    { title: 'Daftarkan Grup', id: '.setgroup', description: isGroup ? 'Daftarkan grup ini' : 'Pilih grup untuk didaftarkan' },
+                                    { title: 'Hapus Grup', id: '.delgroup', description: isGroup ? 'Hapus grup dari daftar' : 'Pilih grup untuk dihapus' },
                                     { title: 'Lihat Grup', id: '.listgroups', description: 'Lihat grup terdaftar' }
                                 ]
                             },
@@ -83,6 +54,14 @@ export default async (clients, m, { isOwner, isGroup }) => {
                                 rows: [
                                     { title: 'Mode Sendiri', id: '.self', description: 'Hanya owner' },
                                     { title: 'Mode Publik', id: '.public', description: 'Semua orang' }
+                                ]
+                            },
+                            {
+                                title: 'Moderasi & Log',
+                                rows: [
+                                    { title: 'Cek Peringatan', id: '.warns', description: 'Lihat peringatan member' },
+                                    { title: 'Daftar Blokir', id: '.banlist', description: 'Lihat user yg dibanned' },
+                                    { title: 'Cek Proses', id: '.cekpending', description: 'Lihat formulir tertunda' }
                                 ]
                             }
                         ]

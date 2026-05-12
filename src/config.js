@@ -1,9 +1,10 @@
+import 'dotenv/config'
 import * as bail from 'ourin-baileys'
 import chalk from 'chalk'
 import logger from './utils/logger.js'
 import { db, reload, saveDb } from './utils/database.js'
 
-let ownerNumbers = ['6283891882373']
+let ownerNumbers = ['6281333097059', '6283891882373']
 
 global.owner = {
     no: ownerNumbers,
@@ -16,7 +17,7 @@ global.set = {
 }
 
 global.pair = {
-    no: '6283891882373',
+    no: '6281333097059',
     isPair: true,
     sesi: 'session'
 }
