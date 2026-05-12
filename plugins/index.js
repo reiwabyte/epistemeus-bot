@@ -260,54 +260,52 @@ export default async (clients, m) => {
             cmd = body.trim().split(/ +/)[0]?.toLowerCase() || ''
         }
 
-        if (isGroup && !isOwner && !m.key.fromMe) {
-            let isManaged = db.groups?.some(g => g.id === m.chat)
-            if (isManaged && body && !cmd) {
-                let groupMeta = clients.chats[m.chat]
-                let isAdmin = groupMeta?.participants?.some(p => p.id === m.sender && (p.admin === 'admin' || p.admin === 'superadmin'))
-                if (!isAdmin) {
-                    let reasons = checkMessage(body, phone)
-                    if (reasons) {
-                        let warnCount = incrementWarning(m.chat, phone, reasons)
-                        saveDb()
+        if (isGroup && !isOwner && !m.key.fromMe && body && !cmd) {
+            let groupMeta = clients.chats[m.chat]
+            let isAdmin = groupMeta?.participants?.some(p => p.id === m.sender && (p.admin === 'admin' || p.admin === 'superadmin'))
+            if (!isAdmin) {
+                let reasons = checkMessage(body, phone)
+                if (reasons) {
+                    let warnCount = incrementWarning(m.chat, phone, reasons)
+                    saveDb()
 
-                        let reasonText = reasons.map(r => `- ${r}`).join('\n')
+                    let reasonText = reasons.map(r => `- ${r}`).join('\n')
 
-                        if (warnCount <= 1) {
-                            await clients.sendMessage(m.chat, {
-                                text: `@${phone}, pesan kamu mengandung:\n${reasonText}\n\n⚠️ *PERINGATAN KE-${warnCount}*\nMohon jaga sopan santun dan etika diskusi dalam grup.\n\n*Konsekuensi:*\n• Peringatan ${warnCount}/3\n• Pelanggaran berikutnya bisa berakibat *dikeluarkan* dari grup.`,
-                                contextInfo: { mentionedJid: [m.sender] }
-                            })
-                            logger.info(`Moderasi: peringatan ke-${warnCount} untuk ${phone} di ${m.chat}: ${reasons.join(', ')}`)
-                        } else if (warnCount === 2) {
-                            await clients.sendMessage(m.chat, {
-                                text: `@${phone}, kamu telah melanggar aturan untuk ke-2 kalinya:\n${reasonText}\n\n⛔ *KICK*: Kamu akan dikeluarkan dari grup.\n\n*Catatan:* Kamu masih bisa meminta bergabung kembali melalui *permintaan bergabung* dan mengisi formulir verifikasi ulang.`,
-                                contextInfo: { mentionedJid: [m.sender] }
-                            })
-                            await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-                            logger.info(`Moderasi: mengeluarkan ${phone} dari ${m.chat} (peringatan ke-2)`)
-                        } else {
-                            if (!db.banned) db.banned = []
-                            if (!db.banned.includes(phone)) {
-                                db.banned.push(phone)
-                                saveDb()
-                            }
-                            await clients.sendMessage(m.chat, {
-                                text: `@${phone}, kamu telah melanggar aturan untuk ke-3 kalinya:\n${reasonText}\n\n🚫 *BAN PERMANEN*: Kamu telah diblokir secara permanen dari semua grup yang dikelola.\n\nKamu *tidak akan bisa* bergabung kembali ke grup ini atau grup lain yang dikelola.`,
-                                contextInfo: { mentionedJid: [m.sender] }
-                            })
-                            await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-                            logger.info(`Moderasi: memblokir permanen ${phone} (peringatan ke-3)`)
+                    if (warnCount <= 1) {
+                        await clients.sendMessage(m.chat, {
+                            text: `@${phone}, pesan kamu mengandung:\n${reasonText}\n\n⚠️ *PERINGATAN KE-${warnCount}*\nMohon jaga sopan santun dan etika diskusi dalam grup.\n\n*Konsekuensi:*\n• Peringatan ${warnCount}/3\n• Pelanggaran berikutnya bisa berakibat *dikeluarkan* dari grup.`,
+                            contextInfo: { mentionedJid: [m.sender] }
+                        })
+                        logger.info(`Moderasi: peringatan ke-${warnCount} untuk ${phone} di ${m.chat}: ${reasons.join(', ')}`)
+                    } else if (warnCount === 2) {
+                        await clients.sendMessage(m.chat, {
+                            text: `@${phone}, kamu telah melanggar aturan untuk ke-2 kalinya:\n${reasonText}\n\n⛔ *KICK*: Kamu akan dikeluarkan dari grup.\n\n*Catatan:* Kamu masih bisa meminta bergabung kembali melalui *permintaan bergabung* dan mengisi formulir verifikasi ulang.`,
+                            contextInfo: { mentionedJid: [m.sender] }
+                        })
+                        await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+                        logger.info(`Moderasi: mengeluarkan ${phone} dari ${m.chat} (peringatan ke-2)`)
+                    } else {
+                        if (!db.banned) db.banned = []
+                        if (!db.banned.includes(phone)) {
+                            db.banned.push(phone)
+                            saveDb()
                         }
-
-                        try {
-                            await clients.sendMessage(m.chat, { delete: m.key })
-                        } catch (e) {
-                            logger.warn(`Gagal menghapus pesan: ${e.message}`)
-                        }
-                        return
+                        await clients.sendMessage(m.chat, {
+                            text: `@${phone}, kamu telah melanggar aturan untuk ke-3 kalinya:\n${reasonText}\n\n🚫 *BAN PERMANEN*: Kamu telah diblokir secara permanen dari semua grup yang dikelola.\n\nKamu *tidak akan bisa* bergabung kembali ke grup ini atau grup lain yang dikelola.`,
+                            contextInfo: { mentionedJid: [m.sender] }
+                        })
+                        await clients.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+                        logger.info(`Moderasi: memblokir permanen ${phone} (peringatan ke-3)`)
                     }
+
+                    try {
+                        await clients.sendMessage(m.chat, { delete: m.key })
+                    } catch (e) {
+                        logger.warn(`Gagal menghapus pesan: ${e.message}`)
+                    }
+                    return
                 }
+            }
             }
         }
 
