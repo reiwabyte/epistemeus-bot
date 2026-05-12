@@ -44,6 +44,8 @@ import hdCmd from './hd.js'
 import lirikCmd from './lirik.js'
 import npmstalkCmd from './npmstalk.js'
 import githubstalkCmd from './githubstalk.js'
+import getplCmd from './getpl.js'
+import getscrapeCmd from './getscrape.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -80,7 +82,9 @@ const commands = {
     hd: hdCmd,
     lirik: lirikCmd,
     npmstalk: npmstalkCmd,
-    githubstalk: githubstalkCmd
+    githubstalk: githubstalkCmd,
+    getpl: getplCmd,
+    getscrape: getscrapeCmd
 }
 
 const STEP_QUESTIONS = [

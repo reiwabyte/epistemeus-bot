@@ -15,6 +15,8 @@ export default async (clients, m, { prefix }) => {
     teks += '│ ◦ ' + prefix + 'lirik [judul lagu]\n'
     teks += '│ ◦ ' + prefix + 'npmstalk [package]\n'
     teks += '│ ◦ ' + prefix + 'githubstalk [username]\n'
+    teks += '│ ◦ ' + prefix + 'getpl [nama plugin]\n'
+    teks += '│ ◦ ' + prefix + 'getscrape [nama scraper]\n'
     teks += '│\n'
     teks += '└───\n'
 
