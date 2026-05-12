@@ -1,4 +1,4 @@
-import { askGemini, askGeminiWithImage } from '../src/utils/gemini.js'
+import { askHF, askHFWithImage } from '../src/utils/huggingface.js'
 
 async function downloadImage(clients, msg) {
     if (msg.download) return msg.download()
@@ -107,13 +107,13 @@ export default async (clients, m, { body, prefix, cmd }) => {
         try {
             let media = await downloadImage(clients, imageMsg)
             let mime = imageMsg.msg?.mimetype || imageMsg.mimetype || 'image/jpeg'
-            result = await askGeminiWithImage(prompt, media, mime)
+            result = await askHFWithImage(prompt, media, mime)
         } catch (e) {
             await m.react('❌')
             return m.reply('Gagal memproses gambar: ' + e.message)
         }
     } else {
-        result = await askGemini(prompt)
+        result = await askHF(prompt)
     }
 
     await m.react('✅')

@@ -110,6 +110,12 @@ export default async (clients, m, { isOwner, isGroup }) => {
                                 rows: [
                                     { title: 'Download Menu', id: '.downloadmenu', description: 'Lihat daftar download' }
                                 ]
+                            },
+                            {
+                                title: 'Tools',
+                                rows: [
+                                    { title: 'Tools Menu', id: '.toolsmenu', description: 'Lihat daftar tools' }
+                                ]
                             }
                         ]
                     })

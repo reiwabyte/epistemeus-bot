@@ -1,9 +1,14 @@
 console.clear()
 import './src/config.js'
+import fs from 'fs'
+import path from 'path'
 import pino from 'pino'
 import { clientsConfig, smsg } from './src/utils/handler.js'
 import logger from './src/utils/logger.js'
 import caseHandler from './plugins/index.js'
+
+const TMP_DIR = path.join(process.cwd(), 'tmp')
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true })
 
 async function start() {
     let { state, saveCreds } = await bail.useMultiFileAuthState(pair.sesi)
@@ -131,6 +136,18 @@ Kami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lal
             process.exit(1)
         }
     }, 60000)
+
+    setInterval(() => {
+        fs.readdir(TMP_DIR, (err, files) => {
+            if (err) return
+            for (let f of files) {
+                if (f === '.gitkeep') continue
+                let fp = path.join(TMP_DIR, f)
+                fs.rm(fp, { recursive: true, force: true }, () => {})
+            }
+            if (files.length > 1) logger.info(`Cleaned tmp/ (${files.length - 1} file(s) removed)`)
+        })
+    }, 1500000)
 }
 
 start()

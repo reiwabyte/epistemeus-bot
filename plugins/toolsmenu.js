@@ -5,17 +5,16 @@ export default async (clients, m, { prefix }) => {
     try { img = fs.readFileSync(process.cwd() + '/media/menu.jpeg') } catch { img = null }
 
     let teks = ''
-    teks += '┌─ ❖ *Download Menu* ❖ ─┐\n'
+    teks += '┌─ ❖ *Tools Menu* ❖ ─┐\n'
     teks += '│\n'
-    teks += '│ ◦ ' + prefix + 'tiktok [url]\n'
-    teks += '│ ◦ ' + prefix + 'tiktoksearch [kata kunci]\n'
-    teks += '│ ◦ ' + prefix + 'spotify [url | judul]\n'
-    teks += '│ ◦ ' + prefix + 'play [judul lagu]\n'
-    teks += '│ ◦ ' + prefix + 'yt [url youtube]\n'
-    teks += '│ ◦ ' + prefix + 'fb [url facebook]\n'
-    teks += '│ ◦ ' + prefix + 'twitter [url twitter]\n'
-    teks += '│ ◦ ' + prefix + 'ig [url instagram]\n'
-    teks += '│ ◦ ' + prefix + 'mediafire [url]\n'
+    teks += '│ ◦ ' + prefix + 'binary encode [teks]\n'
+    teks += '│ ◦ ' + prefix + 'binary decode [binary]\n'
+    teks += '│ ◦ ' + prefix + 'tourl (reply/kirim media)\n'
+    teks += '│ ◦ ' + prefix + 'removebg (reply gambar)\n'
+    teks += '│ ◦ ' + prefix + 'hd (reply video) — upscale 2K\n'
+    teks += '│ ◦ ' + prefix + 'lirik [judul lagu]\n'
+    teks += '│ ◦ ' + prefix + 'npmstalk [package]\n'
+    teks += '│ ◦ ' + prefix + 'githubstalk [username]\n'
     teks += '│\n'
     teks += '└───\n'
 
@@ -24,7 +23,7 @@ export default async (clients, m, { prefix }) => {
         contextInfo: {
             externalAdReply: {
                 title: 'Epistemeus Bot',
-                body: 'Download Menu',
+                body: 'Tools Menu',
                 mediaType: 1,
                 thumbnail: img || undefined,
                 showAdAttribution: false,

@@ -1,4 +1,9 @@
+import fs from 'fs'
 import { playAudio } from '../scrape/playch.js'
+
+function getThumb() {
+    try { return fs.readFileSync('media/menu.jpeg') } catch { return undefined }
+}
 
 export default async (clients, m, { isOwner, prefix }) => {
     if (!isOwner) return
@@ -18,7 +23,7 @@ export default async (clients, m, { isOwner, prefix }) => {
                 externalAdReply: {
                     title: res.title,
                     body: res.channel,
-                    thumbnail: res.thumbnail,
+                    thumbnail: res.thumbnail || getThumb(),
                     mediaType: 1,
                     sourceUrl: res.url,
                     showAdAttribution: false,

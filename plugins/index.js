@@ -30,6 +30,20 @@ import downloadmenuCmd from './downloadmenu.js'
 import tiktokCmd from './tiktok.js'
 import spotifyCmd from './spotify.js'
 import playCmd from './play.js'
+import mediafireCmd from './mediafire.js'
+import facebookCmd from './facebook.js'
+import twitterCmd from './twitter.js'
+import igCmd from './ig.js'
+import tiktoksearchCmd from './tiktoksearch.js'
+import ytCmd from './yt.js'
+import toolsmenuCmd from './toolsmenu.js'
+import binaryCmd from './binary.js'
+import uploadCmd from './upload.js'
+import removebgCmd from './removebg.js'
+import hdCmd from './hd.js'
+import lirikCmd from './lirik.js'
+import npmstalkCmd from './npmstalk.js'
+import githubstalkCmd from './githubstalk.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -52,7 +66,21 @@ const commands = {
     downloadmenu: downloadmenuCmd,
     tiktok: tiktokCmd,
     spotify: spotifyCmd,
-    play: playCmd
+    play: playCmd,
+    mediafire: mediafireCmd,
+    fb: facebookCmd,
+    twitter: twitterCmd,
+    ig: igCmd,
+    tiktoksearch: tiktoksearchCmd,
+    yt: ytCmd,
+    toolsmenu: toolsmenuCmd,
+    binary: binaryCmd,
+    tourl: uploadCmd,
+    removebg: removebgCmd,
+    hd: hdCmd,
+    lirik: lirikCmd,
+    npmstalk: npmstalkCmd,
+    githubstalk: githubstalkCmd
 }
 
 const STEP_QUESTIONS = [

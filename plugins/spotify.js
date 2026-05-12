@@ -1,4 +1,20 @@
+import fs from 'fs'
+import axios from 'axios'
 import { spotifyDl, spotifyDlByName } from '../scrape/spotify.js'
+
+function getThumb() {
+    try { return fs.readFileSync('media/menu.jpeg') } catch { return undefined }
+}
+
+async function getThumbnail(url) {
+    if (url) {
+        try {
+            const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 })
+            return Buffer.from(data)
+        } catch {}
+    }
+    return getThumb()
+}
 
 export default async (clients, m, { isOwner, prefix }) => {
     if (!isOwner) return
@@ -23,7 +39,7 @@ export default async (clients, m, { isOwner, prefix }) => {
                 externalAdReply: {
                     title: res.title,
                     body: res.artist,
-                    thumbnailUrl: res.thumbnail || undefined,
+                    thumbnail: await getThumbnail(res.thumbnail),
                     mediaType: 1,
                     showAdAttribution: false
                 }
