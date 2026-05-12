@@ -14,6 +14,22 @@ import warnsCmd from './warns.js'
 import banlistCmd from './banlist.js'
 import aiCmd from './ai.js'
 import logCmd from './log.js'
+import kickCmd from './kick.js'
+import addCmd from './add.js'
+import promoteCmd from './promote.js'
+import demoteCmd from './demote.js'
+import groupCmd from './group.js'
+import linkCmd from './link.js'
+import revokeCmd from './revoke.js'
+import setnameCmd from './setname.js'
+import setdescCmd from './setdesc.js'
+import tagallCmd from './tagall.js'
+import hidetagCmd from './hidetag.js'
+import groupmenuCmd from './groupmenu.js'
+import downloadmenuCmd from './downloadmenu.js'
+import tiktokCmd from './tiktok.js'
+import spotifyCmd from './spotify.js'
+import playCmd from './play.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -25,7 +41,18 @@ const commands = {
     menu: menuCmd,
     ban: banCmd, unban: unbanCmd,
     warns: warnsCmd, banlist: banlistCmd,
-    ai: aiCmd, log: logCmd
+    ai: aiCmd, log: logCmd,
+    kick: kickCmd, add: addCmd,
+    promote: promoteCmd, demote: demoteCmd,
+    group: groupCmd, link: linkCmd, revoke: revokeCmd,
+    setname: setnameCmd, setdesc: setdescCmd,
+    tagall: tagallCmd,
+    hidetag: hidetagCmd,
+    groupmenu: groupmenuCmd,
+    downloadmenu: downloadmenuCmd,
+    tiktok: tiktokCmd,
+    spotify: spotifyCmd,
+    play: playCmd
 }
 
 const STEP_QUESTIONS = [

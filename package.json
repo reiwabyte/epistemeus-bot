@@ -1,5 +1,5 @@
 {
-    "name": "torjs",
+    "name": "epistemeus-ltd",
     "version": "1.0.0",
     "type": "module",
     "main": "index.js",
@@ -9,10 +9,13 @@
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
+        "axios": "^1.16.0",
         "chalk": "^5.4.1",
+        "cheerio": "^1.2.0",
         "dotenv": "^17.4.2",
         "ourin-baileys": "^0.7.14",
         "pino": "^9.6.0",
-        "sharp": "^0.34.5"
+        "sharp": "^0.34.5",
+        "yt-search": "^2.13.1"
     }
 }
