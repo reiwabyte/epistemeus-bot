@@ -306,7 +306,6 @@ export default async (clients, m) => {
                     return
                 }
             }
-            }
         }
 
         if (pendingVerification.has(phone)) {
