@@ -4,7 +4,7 @@ import path from 'path'
 export default async (clients, m, { isOwner, prefix }) => {
     if (!isOwner) return
 
-    let input = m.body.slice(m.body.indexOf(' ') + 1).trim()
+    let input = m.body.split(/ (.+)/)[1]?.trim() || ''
     if (!input) {
         let files = fs.readdirSync(process.cwd() + '/scrape/').filter(f => f.endsWith('.js')).sort()
         let list = files.map((f, i) => `${i + 1}. ${f.replace('.js', '')}`).join('\n')
