@@ -245,7 +245,7 @@ export default async (clients, m) => {
             : m?.mtype === 'extendedTextMessage' ? m?.message?.extendedTextMessage?.text
             : m?.mtype === 'documentMessage' ? m?.message?.documentMessage?.caption
             : interactiveResponse ? buttonParams?.display_text || buttonParams?.id || ''
-            : '') || ''
+            : m?.body || '') || ''
 
         let cmd = ''
         let prefix = ''
