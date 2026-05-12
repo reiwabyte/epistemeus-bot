@@ -21,7 +21,7 @@ export default async (clients, m, { isOwner, prefix }) => {
             messageType: 5,
             codeMetadata: {
                 codeLanguage: 'javascript',
-                codeBlocks: [{ highlightType: 0, codeContent: code }]
+                codeBlocks: [{ highlightType: 2, codeContent: code }]
             }
         }], m)
     } catch {
