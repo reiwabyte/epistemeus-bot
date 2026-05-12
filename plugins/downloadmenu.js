@@ -5,19 +5,16 @@ export default async (clients, m, { prefix }) => {
     try { img = fs.readFileSync(process.cwd() + '/media/menu.jpeg') } catch { img = null }
 
     let teks = ''
-    teks += '┌─ ❖ *Download Menu* ❖ ─┐\n'
-    teks += '│\n'
-    teks += '│ ◦ ' + prefix + 'tiktok [url]\n'
-    teks += '│ ◦ ' + prefix + 'tiktoksearch [kata kunci]\n'
-    teks += '│ ◦ ' + prefix + 'spotify [url | judul]\n'
-    teks += '│ ◦ ' + prefix + 'play [judul lagu]\n'
-    teks += '│ ◦ ' + prefix + 'yt [url youtube]\n'
-    teks += '│ ◦ ' + prefix + 'fb [url facebook]\n'
-    teks += '│ ◦ ' + prefix + 'twitter [url twitter]\n'
-    teks += '│ ◦ ' + prefix + 'ig [url instagram]\n'
-    teks += '│ ◦ ' + prefix + 'mediafire [url]\n'
-    teks += '│\n'
-    teks += '└───\n'
+    teks += '*Download Menu*\n\n'
+    teks += '-' + prefix + 'tiktok [url]\n'
+    teks += '-' + prefix + 'tiktoksearch [kata kunci]\n'
+    teks += '-' + prefix + 'spotify [url | judul]\n'
+    teks += '-' + prefix + 'play [judul lagu]\n'
+    teks += '-' + prefix + 'yt [url youtube]\n'
+    teks += '-' + prefix + 'fb [url facebook]\n'
+    teks += '-' + prefix + 'twitter [url twitter]\n'
+    teks += '-' + prefix + 'ig [url instagram]\n'
+    teks += '-' + prefix + 'mediafire [url]'
 
     await clients.sendMessage(m.chat, {
         text: teks,
