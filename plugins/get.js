@@ -14,7 +14,7 @@ export default async (clients, m, { isOwner, body, prefix, cmd }) => {
         })
         let html = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
         let truncated = html.length > 40000 ? html.slice(0, 40000) + '\n\n... (truncated)' : html
-        await m.reply('```' + truncated + '```')
+        await m.reply(truncated)
     } catch (e) {
         await m.reply('Gagal mengambil halaman: ' + e.message)
     }
