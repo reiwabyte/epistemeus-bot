@@ -38,14 +38,22 @@ export function buildSubMessages(answer) {
         if (match.index > lastEnd) {
             submessages.push({ messageType: 2, messageText: answer.slice(lastEnd, match.index).trim() })
         }
-        let lang = match[1].toLowerCase() || 'javascript'
-        let langMap = { js: 'javascript', ts: 'typescript', py: 'python', go: 'go', sh: 'bash', bash: 'bash', lua: 'lua' }
-        let language = langMap[lang] || (['javascript', 'typescript', 'python', 'go', 'bash', 'lua'].includes(lang) ? lang : 'javascript')
+        let lang = match[1].toLowerCase() || ''
+        if (!lang) lang = match[1] || ''
+        let langMap = {
+            js: 'javascript', ts: 'typescript', py: 'python', go: 'go', sh: 'bash', bash: 'bash',
+            lua: 'lua', rb: 'ruby', rs: 'rust', java: 'java', cpp: 'cpp', c: 'c',
+            cs: 'csharp', php: 'php', swift: 'swift', kt: 'kotlin', dart: 'dart',
+            scala: 'scala', r: 'r', pl: 'perl', html: 'html', css: 'css',
+            json: 'json', xml: 'xml', yml: 'yaml', yaml: 'yaml', sql: 'sql',
+            md: 'markdown', dockerfile: 'dockerfile', makefile: 'makefile'
+        }
+        let language = langMap[lang] || lang || 'javascript'
         submessages.push({
             messageType: 5,
             codeMetadata: {
                 codeLanguage: language,
-                codeBlocks: [{ highlightType: 0, codeContent: match[2].trim() }]
+                codeBlocks: [{ highlightType: 2, codeContent: match[2].trim() }]
             }
         })
         lastEnd = match.index + match[0].length
