@@ -1,14 +1,5 @@
 import { askGroq, askGroqWithImage, listModels, getModel, setModel } from '../src/utils/groq.js'
-
-async function downloadImage(clients, msg) {
-    if (msg.download) return msg.download()
-    let mime = msg.msg?.mimetype || msg.mimetype || 'image/jpeg'
-    let msgType = mime.split('/')[0]
-    let stream = await bail.downloadContentFromMessage(msg.msg || msg, msgType)
-    let buffer = Buffer.from([])
-    for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
-    return buffer
-}
+import { downloadImage, sendRichOrPlain } from '../src/utils/richmessage.js'
 
 export default async (clients, m, { body, prefix, cmd }) => {
     let input = body.split(/ (.+)/)[1]?.trim() || ''
@@ -71,5 +62,5 @@ export default async (clients, m, { body, prefix, cmd }) => {
     let answer = result.text.trim()
     if (!answer) return m.reply('Tidak ada respons dari Groq.')
 
-    await clients.sendMessage(m.chat, { text: answer }, { quoted: m })
+    await sendRichOrPlain(clients, m, answer)
 }
