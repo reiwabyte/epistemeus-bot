@@ -5,7 +5,7 @@ export default async (clients, m, { isOwner }) => {
     let text = `*Riwayat Anggota* (${db.history.length})\n\n`
     let recent = db.history.slice(-20).reverse()
     for (let h of recent) {
-        let icon = h.status === 'approved' ? '✅' : '❌'
+        let icon = h.status === 'approved' ? '✅' : h.status === 'auto_approved' ? '🔄' : '❌'
         let waktu = new Date(h.time).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
         text += `${icon} ${h.name} (${h.number})\n   ${h.group} • ${waktu}\n`
     }

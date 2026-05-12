@@ -36,6 +36,7 @@ export default async (clients, m, { prefix }) => {
     teks += '│ ◦ ' + prefix + 'unban @user\n'
     teks += '│ ◦ ' + prefix + 'warns\n'
     teks += '│ ◦ ' + prefix + 'banlist\n'
+    teks += '│ ◦ ' + prefix + 'approvedlist\n'
     teks += '│ ◦ ' + prefix + 'log\n'
     teks += '│\n'
     teks += '│ ◇ *Download*\n'

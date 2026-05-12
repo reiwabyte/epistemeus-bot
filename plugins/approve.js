@@ -23,6 +23,21 @@ export default async (clients, m, { isOwner, prefix }) => {
     let gd = db.groups?.find(g => g.id === data.groupJid)
     let gName = gd?.name || 'Grup'
 
+    let communityJid = gd?.community || null
+    if (!communityJid) {
+        try {
+            let meta = await clients.groupMetadata(data.groupJid)
+            communityJid = meta?.linkedParent || null
+        } catch {}
+    }
+    if (communityJid) {
+        if (!db.communityApproved) db.communityApproved = {}
+        if (!db.communityApproved[communityJid]) db.communityApproved[communityJid] = []
+        if (!db.communityApproved[communityJid].includes(targetNum)) {
+            db.communityApproved[communityJid].push(targetNum)
+        }
+    }
+
     if (!db.history) db.history = []
     db.history.push({
         number: targetNum,
@@ -34,7 +49,7 @@ export default async (clients, m, { isOwner, prefix }) => {
     saveDb()
 
     await clients.sendMessage(targetJid, {
-        text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Silakan cek grup sekarang.`
+        text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Sekarang kamu terverifikasi untuk grup lain di komunitas ini. Silakan cek grup sekarang.`
     })
 
     await m.reply(`Berhasil menyetujui permintaan bergabung dari @${targetNum}`, { mentions: [targetJid] })

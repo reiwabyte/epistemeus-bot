@@ -48,6 +48,7 @@ import githubstalkCmd from './githubstalk.js'
 import getplCmd from './getpl.js'
 import getscrapeCmd from './getscrape.js'
 import ownermenuCmd from './ownermenu.js'
+import approvedlistCmd from './approvedlist.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -87,6 +88,7 @@ const commands = {
     githubstalk: githubstalkCmd,
     getpl: getplCmd,
     groq: groqCmd,
+    approvedlist: approvedlistCmd,
     getscrape: getscrapeCmd,
     ownermenu: ownermenuCmd
 }
@@ -209,6 +211,23 @@ export default async (clients, m) => {
                 let gd = db.groups?.find(g => g.id === data.groupJid)
                 let gName = gd?.name || 'Grup'
 
+                if (isApprove) {
+                    let communityJid = gd?.community || null
+                    if (!communityJid) {
+                        try {
+                            let meta = await clients.groupMetadata(data.groupJid)
+                            communityJid = meta?.linkedParent || null
+                        } catch {}
+                    }
+                    if (communityJid) {
+                        if (!db.communityApproved) db.communityApproved = {}
+                        if (!db.communityApproved[communityJid]) db.communityApproved[communityJid] = []
+                        if (!db.communityApproved[communityJid].includes(targetNum)) {
+                            db.communityApproved[communityJid].push(targetNum)
+                        }
+                    }
+                }
+
                 if (!db.history) db.history = []
                 db.history.push({
                     number: targetNum,
@@ -220,7 +239,7 @@ export default async (clients, m) => {
                 saveDb()
 
                 if (isApprove) {
-                    await clients.sendMessage(targetJid, { text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Silakan cek grup sekarang.` })
+                    await clients.sendMessage(targetJid, { text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Sekarang kamu terverifikasi untuk semua grup yang dikelola. Silakan cek grup sekarang.` })
                 } else {
                     await clients.sendMessage(targetJid, { text: `Mohon maaf, permintaan kamu untuk bergabung ke grup *${gName}* telah DITOLAK.\n\nTerimakasih telah meluangkan waktu untuk mengisi formulir.` })
                 }
@@ -244,7 +263,8 @@ export default async (clients, m) => {
                 }
                 let meta = clients.chats?.[groupJid] || await clients.groupMetadata(groupJid).catch(() => null)
                 let name = meta?.subject || groupJid
-                db.groups.push({ id: groupJid, name })
+                let community = meta?.linkedParent || null
+                db.groups.push({ id: groupJid, name, community })
                 saveDb()
                 await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil didaftarkan!` })
                 logger.info(`Grup terdaftar dari DM: ${groupJid} (${name})`)

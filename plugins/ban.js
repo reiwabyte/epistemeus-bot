@@ -9,8 +9,16 @@ export default async (clients, m, { isOwner, isGroup, prefix }) => {
     if (!db.banned) db.banned = []
     if (!db.banned.includes(targetNum)) {
         db.banned.push(targetNum)
-        saveDb()
     }
+
+    if (db.communityApproved) {
+        for (let cid in db.communityApproved) {
+            let idx = db.communityApproved[cid].indexOf(targetNum)
+            if (idx !== -1) db.communityApproved[cid].splice(idx, 1)
+        }
+    }
+
+    saveDb()
 
     try {
         await clients.groupParticipantsUpdate(m.chat, [target], 'remove')

@@ -14,7 +14,8 @@ export default async (clients, m, { isOwner, isGroup }) => {
         }
 
         if (!db.groups) db.groups = []
-        db.groups.push({ id: m.chat, name: targetName })
+        let community = meta?.linkedParent || null
+        db.groups.push({ id: m.chat, name: targetName, community })
         saveDb()
 
         await clients.sendMessage(m.chat, {

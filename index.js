@@ -110,6 +110,31 @@ async function start() {
             let groupData = db.groups.find(g => bail.jidNormalizedUser(g.id) === groupJid)
             let groupName = groupData?.name || 'Grup'
 
+            let communityJid = null
+            try {
+                let meta = await clients.groupMetadata(groupJid)
+                communityJid = meta?.linkedParent || null
+            } catch {}
+            communityJid = communityJid || groupData?.community || null
+
+            if (communityJid && db.communityApproved?.[communityJid]?.includes(userNum)) {
+                logger.info(`User ${userNum} already approved in community ${communityJid}, auto-approving for ${groupJid}`)
+                try {
+                    await clients.groupRequestParticipantsUpdate(groupJid, [userJid], 'approve')
+                } catch {}
+                await clients.sendMessage(userJid, { text: `Selamat datang kembali! Kamu sudah terverifikasi di komunitas ini, langsung disetujui untuk grup *${groupName}*.` })
+                if (!db.history) db.history = []
+                db.history.push({
+                    number: userNum,
+                    name: userNum,
+                    group: groupName,
+                    status: 'auto_approved',
+                    time: Date.now()
+                })
+                saveDb()
+                return
+            }
+
             let opening = `Halo! Sebelumnya kami mengucapkan terimakasih telah meminta bergabung ke grup ${groupName}.
 
 Kami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lalu ketik *lanjutkan* untuk memulai.`

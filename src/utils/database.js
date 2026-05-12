@@ -4,7 +4,7 @@ const DB_PATH = 'database.json'
 
 function load() {
     if (!existsSync(DB_PATH)) {
-        let initial = { groups: [], banned: [], warnings: {}, history: [] }
+        let initial = { groups: [], banned: [], warnings: {}, history: [], communityApproved: {} }
         writeFileSync(DB_PATH, JSON.stringify(initial, null, 2))
         return initial
     }
