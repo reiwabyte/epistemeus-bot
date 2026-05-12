@@ -10,72 +10,78 @@ async function downloadImage(clients, msg) {
     return buffer
 }
 
-function sendAsText(clients, jid, answer, m) {
-    return clients.sendMessage(jid, {
-        text: answer,
-        contextInfo: {
-            externalAdReply: {
-                title: '🤖 Epistemeia AI',
-                body: `Google Gemini • ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`,
-                showAdAttribution: false,
-                mediaType: 1,
-                mediaUrl: '',
-                sourceUrl: ''
-            },
-            mentionedJid: [m.sender]
-        }
-    }, { quoted: m })
-}
-
 function parseTable(md) {
     let lines = md.trim().split('\n').filter(l => l.trim())
     if (lines.length < 2) return null
-    let headers = lines[0].split('|').map(s => s.trim()).filter(Boolean)
     let sep = lines[1]
     if (!/^[\s:|:-]+$/.test(sep)) return null
+    let headers = lines[0].split('|').map(s => s.trim()).filter(Boolean)
     let rows = []
     for (let i = 2; i < lines.length; i++) {
         let cols = lines[i].split('|').map(s => s.trim()).filter(Boolean)
         if (cols.length > 0) rows.push(cols)
     }
     if (rows.length === 0) return null
-    return { headers, rows }
+    return {
+        rows: [
+            { items: headers, isHeading: true },
+            ...rows.map(r => ({ items: r }))
+        ]
+    }
 }
 
-function detectContent(answer) {
+function buildSubMessages(answer) {
     let codeRegex = /```(\w*)\n([\s\S]*?)```/g
-    let match
-    let codeBlocks = []
+    let submessages = []
     let lastEnd = 0
-    let parts = []
+    let match
 
     while ((match = codeRegex.exec(answer)) !== null) {
         if (match.index > lastEnd) {
-            parts.push({ type: 'text', text: answer.slice(lastEnd, match.index).trim() })
+            submessages.push({ messageType: 2, messageText: answer.slice(lastEnd, match.index).trim() })
         }
         let lang = match[1].toLowerCase() || 'javascript'
-        let langMap = { js: 'javascript', ts: 'typescript', py: 'python', go: 'go', sh: 'bash', bash: 'bash', lua: 'lua', rs: 'javascript', rb: 'javascript', java: 'javascript', cpp: 'javascript', c: 'javascript', cs: 'javascript', swift: 'javascript', kotlin: 'javascript', php: 'javascript', pl: 'javascript' }
-        let detected = langMap[lang] || (['javascript', 'typescript', 'python', 'go', 'bash', 'lua'].includes(lang) ? lang : 'javascript')
-        codeBlocks.push({ language: detected, code: match[2].trim(), codeIndex: match.index })
-        parts.push({ type: 'code', language: detected, code: match[2].trim() })
+        let langMap = { js: 'javascript', ts: 'typescript', py: 'python', go: 'go', sh: 'bash', bash: 'bash', lua: 'lua' }
+        let language = langMap[lang] || (['javascript', 'typescript', 'python', 'go', 'bash', 'lua'].includes(lang) ? lang : 'javascript')
+        submessages.push({
+            messageType: 5,
+            codeMetadata: {
+                codeLanguage: language,
+                codeBlocks: [{ highlightType: 0, codeContent: match[2].trim() }]
+            }
+        })
         lastEnd = match.index + match[0].length
     }
 
-    if (lastEnd < answer.length) {
-        parts.push({ type: 'text', text: answer.slice(lastEnd).trim() })
-    }
+    let hasCode = submessages.some(s => s.messageType === 5)
 
-    if (codeBlocks.length > 0) return { type: 'mixed', parts, codeBlocks, hasCode: true }
-
-    let tableMatch = answer.match(/(?:\|.+\|(?:\r?\n))(?:\|[\s:|:-]+\|(?:\r?\n))(?:\|.+\|(?:\r?\n|$))+/)
-    if (tableMatch) {
-        let table = parseTable(tableMatch[0])
-        if (table) {
-            return { type: 'table', table, tableStr: tableMatch[0], before: answer.slice(0, tableMatch.index).trim(), after: answer.slice(tableMatch.index + tableMatch[0].length).trim() }
+    if (!hasCode) {
+        let remaining = answer.slice(lastEnd).trim()
+        let tableMatch = (remaining || answer).match(/(?:\|.+\|(?:\r?\n))(?:\|[\s:|:-]+\|(?:\r?\n))(?:\|.+\|(?:\r?\n|$))+/)
+        if (tableMatch) {
+            let src = remaining || answer
+            let table = parseTable(tableMatch[0])
+            if (table) {
+                let before = src.slice(0, tableMatch.index).trim()
+                let after = src.slice(tableMatch.index + tableMatch[0].length).trim()
+                if (before) submessages.push({ messageType: 2, messageText: before })
+                submessages.push({ messageType: 4, tableMetadata: { title: '', rows: table.rows } })
+                if (after) submessages.push({ messageType: 2, messageText: after })
+                return submessages
+            }
         }
+        if (remaining) {
+            submessages.push({ messageType: 2, messageText: remaining })
+        }
+    } else if (lastEnd < answer.length) {
+        submessages.push({ messageType: 2, messageText: answer.slice(lastEnd).trim() })
     }
 
-    return { type: 'text', text: answer }
+    if (submessages.length === 0) {
+        submessages.push({ messageType: 2, messageText: answer })
+    }
+
+    return submessages
 }
 
 export default async (clients, m, { body, prefix, cmd }) => {
@@ -116,91 +122,11 @@ export default async (clients, m, { body, prefix, cmd }) => {
     let answer = result.text.trim()
     if (!answer) return m.reply('Tidak ada respons dari AI.')
 
-    let content = detectContent(answer)
-    let isNews = /berita|news|kabar|terkini|headline|peristiwa|aktual|info terbaru|current events/i.test(prompt) && (answer.length > 100)
-    let adFooter = `Google Gemini • ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`
+    let submessages = buildSubMessages(answer)
 
-    if (content.type === 'text') {
-        if (isNews) {
-            let lines = answer.trim().split('\n')
-            let title = lines[0].replace(/[*#_~]/g, '').trim().slice(0, 60)
-            let snippet = lines.slice(1).join(' ').replace(/[*#_~]/g, '').trim().slice(0, 80)
-            return clients.sendMessage(m.chat, {
-                text: answer,
-                contextInfo: {
-                    externalAdReply: {
-                        title: '📰 ' + title,
-                        body: snippet || title,
-                        mediaType: 1,
-                        mediaUrl: '',
-                        sourceUrl: 'https://news.google.com',
-                        showAdAttribution: false
-                    },
-                    mentionedJid: [m.sender]
-                }
-            }, { quoted: m })
-        }
-        return sendAsText(clients, m.chat, answer, m)
+    try {
+        await clients.sendRichMessage(m.chat, submessages, m)
+    } catch {
+        await clients.sendMessage(m.chat, { text: answer }, { quoted: m })
     }
-
-    if (content.type === 'table' && content.table) {
-        let t = content.table
-        let headerRow = t.headers.join(' | ')
-        let dataRows = t.rows.map(r => r.join(' | ')).join(';;')
-        try {
-            await clients.sendTableV2(m.chat, ['', headerRow, dataRows], m, {
-                headerText: content.before || '',
-                text: '',
-                footer: adFooter
-            })
-        } catch {
-            let md = '| ' + t.headers.join(' | ') + ' |\n'
-            md += '|' + t.headers.map(() => '---').join('|') + '|\n'
-            for (let row of t.rows) md += '| ' + row.join(' | ') + ' |\n'
-            if (content.before) md = content.before + '\n\n' + md
-            if (content.after) md += '\n\n' + content.after
-            await sendAsText(clients, m.chat, md, m)
-        }
-        if (content.after) await sendAsText(clients, m.chat, content.after, m)
-        return
-    }
-
-    let textBefore = ''
-    let codeBlock = null
-    let textAfter = ''
-
-    for (let part of content.parts || []) {
-        if (part.type === 'code' && !codeBlock) {
-            codeBlock = part
-        } else if (part.type === 'code' && codeBlock) {
-            textAfter += '\n```' + part.language + '\n' + part.code + '\n```\n'
-        } else if (!codeBlock) {
-            textBefore += (textBefore ? '\n\n' : '') + part.text
-        } else {
-            textAfter += (textAfter ? '\n\n' : '') + part.text
-        }
-    }
-
-    if (codeBlock) {
-        let title = `💻 ${codeBlock.language.charAt(0).toUpperCase() + codeBlock.language.slice(1)}`
-        let bodyText = textBefore || ''
-        if (textAfter) bodyText += (bodyText ? '\n\n' : '') + textAfter
-        try {
-            await clients.sendCodeBlockV2(m.chat, codeBlock.code, m, {
-                language: codeBlock.language,
-                title,
-                text: bodyText,
-                footer: adFooter
-            })
-        } catch {
-            let md = ''
-            if (textBefore) md += textBefore + '\n\n'
-            md += '```' + codeBlock.language + '\n' + codeBlock.code + '\n```'
-            if (textAfter) md += '\n\n' + textAfter
-            await sendAsText(clients, m.chat, md, m)
-        }
-        return
-    }
-
-    return sendAsText(clients, m.chat, answer, m)
 }
