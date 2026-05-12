@@ -7,7 +7,6 @@ export default async (clients, m, { prefix }) => {
     let teks = ''
     teks += '*Download Menu*\n\n'
     teks += '-' + prefix + 'tiktok [url]\n'
-    teks += '-' + prefix + 'tiktoksearch [kata kunci]\n'
     teks += '-' + prefix + 'spotify [url | judul]\n'
     teks += '-' + prefix + 'play [judul lagu]\n'
     teks += '-' + prefix + 'yt [url youtube]\n'

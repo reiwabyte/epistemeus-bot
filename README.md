@@ -21,7 +21,7 @@
 
 | Category | Commands |
 |----------|----------|
-| **Download** | `.tiktok`, `.tiktoksearch`, `.spotify`, `.play`, `.yt`, `.fb`, `.twitter`, `.ig`, `.mediafire` |
+| **Download** | `.tiktok`, `.spotify`, `.play`, `.yt`, `.fb`, `.twitter`, `.ig`, `.mediafire` |
 | **AI** | `.hf` (Hugging Face), `.groq` (Groq LPU) |
 | **Tools** | `.binary`, `.tourl`, `.removebg`, `.hd` (video upscale), `.lirik`, `.npmstalk`, `.githubstalk`, `.getpl`, `.getscrape` |
 | **Group** | `.kick`, `.add`, `.promote`, `.demote`, `.group`, `.link`, `.revoke`, `.setname`, `.setdesc`, `.tagall`, `.hidetag` |
@@ -126,7 +126,6 @@ Menggunakan Groq API dengan inference cepat (LPU). Default model: `llama-3.3-70b
 | Command | Deskripsi |
 |---------|-----------|
 | `.tiktok [url]` | Download TikTok tanpa watermark |
-| `.tiktoksearch [kata kunci]` | Cari video TikTok |
 | `.spotify [url/judul]` | Info lagu Spotify |
 | `.play [judul]` | Cari & download audio YouTube |
 | `.yt [url]` | Download video YouTube |

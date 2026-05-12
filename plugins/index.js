@@ -35,7 +35,6 @@ import mediafireCmd from './mediafire.js'
 import facebookCmd from './facebook.js'
 import twitterCmd from './twitter.js'
 import igCmd from './ig.js'
-import tiktoksearchCmd from './tiktoksearch.js'
 import ytCmd from './yt.js'
 import toolsmenuCmd from './toolsmenu.js'
 import binaryCmd from './binary.js'
@@ -76,7 +75,6 @@ const commands = {
     fb: facebookCmd,
     twitter: twitterCmd,
     ig: igCmd,
-    tiktoksearch: tiktoksearchCmd,
     yt: ytCmd,
     toolsmenu: toolsmenuCmd,
     binary: binaryCmd,

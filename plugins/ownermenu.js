@@ -37,7 +37,6 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'log\n\n'
     teks += '*Download*\n'
     teks += '-' + prefix + 'tiktok [url]\n'
-    teks += '-' + prefix + 'tiktoksearch [kata kunci]\n'
     teks += '-' + prefix + 'spotify [url | judul]\n'
     teks += '-' + prefix + 'play [judul lagu]\n'
     teks += '-' + prefix + 'yt [url]\n'
