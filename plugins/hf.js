@@ -89,7 +89,7 @@ export default async (clients, m, { body, prefix, cmd }) => {
     let quoted = m.quoted
 
     if (!input && !quoted && m.mtype !== 'imageMessage') {
-        return m.reply(`Gunakan: ${prefix}ai [pertanyaan]\nAtau kirim foto dengan ${prefix}ai [pertanyaan]`)
+        return m.reply(`Gunakan: ${prefix}hf [pertanyaan]\nAtau kirim foto dengan ${prefix}hf [pertanyaan]`)
     }
 
     let prompt = input || 'Analisis gambar ini'

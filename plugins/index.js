@@ -12,7 +12,7 @@ import banCmd from './ban.js'
 import unbanCmd from './unban.js'
 import warnsCmd from './warns.js'
 import banlistCmd from './banlist.js'
-import aiCmd from './ai.js'
+import aiCmd from './hf.js'
 import logCmd from './log.js'
 import kickCmd from './kick.js'
 import addCmd from './add.js'
@@ -58,7 +58,7 @@ const commands = {
     menu: menuCmd,
     ban: banCmd, unban: unbanCmd,
     warns: warnsCmd, banlist: banlistCmd,
-    ai: aiCmd, log: logCmd,
+    hf: aiCmd, log: logCmd,
     kick: kickCmd, add: addCmd,
     promote: promoteCmd, demote: demoteCmd,
     group: groupCmd, link: linkCmd, revoke: revokeCmd,
