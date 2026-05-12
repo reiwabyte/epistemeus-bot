@@ -61,7 +61,8 @@ export default async (clients, m, { isOwner, isGroup }) => {
                                 rows: [
                                     { title: 'Cek Peringatan', id: '.warns', description: 'Lihat peringatan member' },
                                     { title: 'Daftar Blokir', id: '.banlist', description: 'Lihat user yg dibanned' },
-                                    { title: 'Cek Proses', id: '.cekpending', description: 'Lihat formulir tertunda' }
+                                    { title: 'Cek Proses', id: '.cekpending', description: 'Lihat formulir tertunda' },
+                                    { title: 'Cek Riwayat', id: '.log', description: 'Lihat riwayat approve/reject' }
                                 ]
                             }
                         ]

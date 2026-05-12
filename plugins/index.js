@@ -13,6 +13,7 @@ import unbanCmd from './unban.js'
 import warnsCmd from './warns.js'
 import banlistCmd from './banlist.js'
 import aiCmd from './ai.js'
+import logCmd from './log.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -24,7 +25,7 @@ const commands = {
     menu: menuCmd,
     ban: banCmd, unban: unbanCmd,
     warns: warnsCmd, banlist: banlistCmd,
-    ai: aiCmd
+    ai: aiCmd, log: logCmd
 }
 
 const STEP_QUESTIONS = [

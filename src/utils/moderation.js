@@ -169,8 +169,12 @@ function normalizeText(text) {
 
 function checkVulgar(text) {
     let lower = text.toLowerCase()
+    let cleaned = lower.replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim()
+    let tokens = cleaned.split(' ')
     for (let word of VULGAR) {
-        let escaped = word.replace(/[0-9]/g, '[0-9a-z]').replace(/[.+*?^${}()|[\]\\]/g, '\\$&')
+        let base = word.toLowerCase()
+        if (tokens.some(t => t === base || t.startsWith(base) || t.endsWith(base))) return true
+        let escaped = base.replace(/[0-9]/g, '[0-9a-z]')
         let regex = new RegExp('\\b' + escaped + '\\b', 'i')
         if (regex.test(lower)) return true
     }
