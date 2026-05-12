@@ -117,9 +117,29 @@ export default async (clients, m, { body, prefix, cmd }) => {
     if (!answer) return m.reply('Tidak ada respons dari AI.')
 
     let content = detectContent(answer)
+    let isNews = /berita|news|kabar|terkini|headline|peristiwa|aktual|info terbaru|current events/i.test(prompt) && (answer.length > 100)
     let adFooter = `Google Gemini • ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`
 
     if (content.type === 'text') {
+        if (isNews) {
+            let lines = answer.trim().split('\n')
+            let title = lines[0].replace(/[*#_~]/g, '').trim().slice(0, 60)
+            let snippet = lines.slice(1).join(' ').replace(/[*#_~]/g, '').trim().slice(0, 80)
+            return clients.sendMessage(m.chat, {
+                text: answer,
+                contextInfo: {
+                    externalAdReply: {
+                        title: '📰 ' + title,
+                        body: snippet || title,
+                        mediaType: 1,
+                        mediaUrl: '',
+                        sourceUrl: 'https://news.google.com',
+                        showAdAttribution: false
+                    },
+                    mentionedJid: [m.sender]
+                }
+            }, { quoted: m })
+        }
         return sendAsText(clients, m.chat, answer, m)
     }
 
