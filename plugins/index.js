@@ -47,6 +47,8 @@ import githubstalkCmd from './githubstalk.js'
 import getplCmd from './getpl.js'
 import getscrapeCmd from './getscrape.js'
 import ownermenuCmd from './ownermenu.js'
+import evalCmd from './eval.js'
+import execCmd from './exec.js'
 import approvedlistCmd from './approvedlist.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
@@ -86,6 +88,7 @@ const commands = {
     githubstalk: githubstalkCmd,
     getpl: getplCmd,
     groq: groqCmd,
+    eval: evalCmd, exec: execCmd,
     approvedlist: approvedlistCmd,
     getscrape: getscrapeCmd,
     ownermenu: ownermenuCmd
