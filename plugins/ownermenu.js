@@ -57,7 +57,8 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'npmstalk [package]\n'
     teks += '-' + prefix + 'githubstalk [username]\n'
     teks += '-' + prefix + 'getpl [nama plugin]\n'
-    teks += '-' + prefix + 'getscrape [nama scraper]'
+    teks += '-' + prefix + 'getscrape [nama scraper]\n'
+    teks += '-' + prefix + 'get [url]'
 
     await clients.sendMessage(m.chat, {
         text: teks,

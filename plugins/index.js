@@ -47,6 +47,7 @@ import githubstalkCmd from './githubstalk.js'
 import getplCmd from './getpl.js'
 import getscrapeCmd from './getscrape.js'
 import ownermenuCmd from './ownermenu.js'
+import getCmd from './get.js'
 import evalCmd from './eval.js'
 import execCmd from './exec.js'
 import approvedlistCmd from './approvedlist.js'
@@ -88,6 +89,7 @@ const commands = {
     githubstalk: githubstalkCmd,
     getpl: getplCmd,
     groq: groqCmd,
+    get: getCmd,
     eval: evalCmd, exec: execCmd,
     approvedlist: approvedlistCmd,
     getscrape: getscrapeCmd,
