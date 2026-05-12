@@ -117,31 +117,10 @@ export default async (clients, m, { body, prefix, cmd }) => {
     if (!answer) return m.reply('Tidak ada respons dari AI.')
 
     let content = detectContent(answer)
-
-    if (content.type === 'text' || content.parts?.every(p => p.type === 'text')) {
-        if (content.type === 'text') {
-            return sendAsText(clients, m.chat, answer, m)
-        }
-    }
-
     let adFooter = `Google Gemini • ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`
 
-    for (let part of content.parts || [content]) {
-        if (part.type === 'text' && part.text) {
-            await sendAsText(clients, m.chat, part.text, m)
-        } else if (part.type === 'code') {
-            let title = `💻 ${part.language.charAt(0).toUpperCase() + part.language.slice(1)}`
-            try {
-                await clients.sendCodeBlockV2(m.chat, part.code, m, {
-                    language: part.language,
-                    title,
-                    text: '',
-                    footer: adFooter
-                })
-            } catch {
-                await sendAsText(clients, m.chat, '```' + part.language + '\n' + part.code + '\n```', m)
-            }
-        }
+    if (content.type === 'text') {
+        return sendAsText(clients, m.chat, answer, m)
     }
 
     if (content.type === 'table' && content.table) {
@@ -163,5 +142,45 @@ export default async (clients, m, { body, prefix, cmd }) => {
             await sendAsText(clients, m.chat, md, m)
         }
         if (content.after) await sendAsText(clients, m.chat, content.after, m)
+        return
     }
+
+    let textBefore = ''
+    let codeBlock = null
+    let textAfter = ''
+
+    for (let part of content.parts || []) {
+        if (part.type === 'code' && !codeBlock) {
+            codeBlock = part
+        } else if (part.type === 'code' && codeBlock) {
+            textAfter += '\n```' + part.language + '\n' + part.code + '\n```\n'
+        } else if (!codeBlock) {
+            textBefore += (textBefore ? '\n\n' : '') + part.text
+        } else {
+            textAfter += (textAfter ? '\n\n' : '') + part.text
+        }
+    }
+
+    if (codeBlock) {
+        let title = `💻 ${codeBlock.language.charAt(0).toUpperCase() + codeBlock.language.slice(1)}`
+        let bodyText = textBefore || ''
+        if (textAfter) bodyText += (bodyText ? '\n\n' : '') + textAfter
+        try {
+            await clients.sendCodeBlockV2(m.chat, codeBlock.code, m, {
+                language: codeBlock.language,
+                title,
+                text: bodyText,
+                footer: adFooter
+            })
+        } catch {
+            let md = ''
+            if (textBefore) md += textBefore + '\n\n'
+            md += '```' + codeBlock.language + '\n' + codeBlock.code + '\n```'
+            if (textAfter) md += '\n\n' + textAfter
+            await sendAsText(clients, m.chat, md, m)
+        }
+        return
+    }
+
+    return sendAsText(clients, m.chat, answer, m)
 }
