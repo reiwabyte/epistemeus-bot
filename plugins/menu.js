@@ -118,6 +118,13 @@ export default async (clients, m, { isOwner, isGroup }) => {
                                 ]
                             },
                             {
+                                title: 'AI',
+                                rows: [
+                                    { title: 'AI (HF)', id: '.hf halo', description: 'Tanya Hugging Face AI' },
+                                    { title: 'AI (Groq)', id: '.groq halo', description: 'Tanya Groq AI (cepat)' }
+                                ]
+                            },
+                            {
                                 title: 'Tools',
                                 rows: [
                                     { title: 'Tools Menu', id: '.toolsmenu', description: 'Lihat daftar tools' }
