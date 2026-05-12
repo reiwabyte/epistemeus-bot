@@ -261,6 +261,8 @@ export default async (clients, m) => {
         }
 
         if (isGroup && !isOwner && !m.key.fromMe && body && !cmd) {
+            let isManaged = db.groups?.some(g => g.id === m.chat)
+            if (isManaged) {
             let groupMeta = clients.chats[m.chat]
             let isAdmin = groupMeta?.participants?.some(p => p.id === m.sender && (p.admin === 'admin' || p.admin === 'superadmin'))
             if (!isAdmin) {
@@ -305,6 +307,7 @@ export default async (clients, m) => {
                     }
                     return
                 }
+            }
             }
         }
 
