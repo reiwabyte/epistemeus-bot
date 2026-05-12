@@ -13,6 +13,7 @@ import unbanCmd from './unban.js'
 import warnsCmd from './warns.js'
 import banlistCmd from './banlist.js'
 import aiCmd from './hf.js'
+import groqCmd from './groq.js'
 import logCmd from './log.js'
 import kickCmd from './kick.js'
 import addCmd from './add.js'
@@ -85,6 +86,7 @@ const commands = {
     npmstalk: npmstalkCmd,
     githubstalk: githubstalkCmd,
     getpl: getplCmd,
+    groq: groqCmd,
     getscrape: getscrapeCmd,
     ownermenu: ownermenuCmd
 }

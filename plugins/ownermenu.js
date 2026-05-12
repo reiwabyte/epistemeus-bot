@@ -51,6 +51,7 @@ export default async (clients, m, { prefix }) => {
     teks += '│\n'
     teks += '│ ◇ *Tools & Utility*\n'
     teks += '│ ◦ ' + prefix + 'hf [pertanyaan]\n'
+    teks += '│ ◦ ' + prefix + 'groq [pertanyaan | list | setmodel]\n'
     teks += '│ ◦ ' + prefix + 'binary encode/decode\n'
     teks += '│ ◦ ' + prefix + 'tourl (reply media)\n'
     teks += '│ ◦ ' + prefix + 'removebg (reply gambar)\n'
