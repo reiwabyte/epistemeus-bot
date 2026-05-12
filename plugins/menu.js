@@ -112,6 +112,12 @@ export default async (clients, m, { isOwner, isGroup }) => {
                                 ]
                             },
                             {
+                                title: 'Owner Menu',
+                                rows: [
+                                    { title: 'Owner Menu', id: '.ownermenu', description: 'Lihat semua fitur owner' }
+                                ]
+                            },
+                            {
                                 title: 'Tools',
                                 rows: [
                                     { title: 'Tools Menu', id: '.toolsmenu', description: 'Lihat daftar tools' }

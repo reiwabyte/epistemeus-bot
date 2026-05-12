@@ -46,6 +46,7 @@ import npmstalkCmd from './npmstalk.js'
 import githubstalkCmd from './githubstalk.js'
 import getplCmd from './getpl.js'
 import getscrapeCmd from './getscrape.js'
+import ownermenuCmd from './ownermenu.js'
 import { checkMessage, getWarningCount, incrementWarning, resetWarnings } from '../src/utils/moderation.js'
 
 const getPhone = (jid) => jid?.split('@')[0]
@@ -84,7 +85,8 @@ const commands = {
     npmstalk: npmstalkCmd,
     githubstalk: githubstalkCmd,
     getpl: getplCmd,
-    getscrape: getscrapeCmd
+    getscrape: getscrapeCmd,
+    ownermenu: ownermenuCmd
 }
 
 const STEP_QUESTIONS = [
