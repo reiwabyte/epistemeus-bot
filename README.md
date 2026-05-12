@@ -17,7 +17,7 @@
 
 ---
 
-## Features
+## ✨ Features
 
 | Category | Commands |
 |----------|----------|
@@ -267,3 +267,9 @@ Semua konfigurasi di `src/config.js`:
 | `set.prefix` | `['.']` | Prefix commands |
 | `set.self` | `false` | Mode self/public |
 | `pair.no` | `'6283891882373'` | Nomor untuk pairing |
+
+---
+
+## License
+
+MIT © reiwabyte
