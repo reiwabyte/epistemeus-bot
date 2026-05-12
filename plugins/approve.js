@@ -23,6 +23,16 @@ export default async (clients, m, { isOwner, prefix }) => {
     let gd = db.groups?.find(g => g.id === data.groupJid)
     let gName = gd?.name || 'Grup'
 
+    if (!db.history) db.history = []
+    db.history.push({
+        number: targetNum,
+        name: data.answers?.[0] || targetNum,
+        group: gName,
+        status: 'approved',
+        time: Date.now()
+    })
+    saveDb()
+
     await clients.sendMessage(targetJid, {
         text: `Selamat! Permintaan kamu untuk bergabung ke grup *${gName}* telah DISETUJUI! Silakan cek grup sekarang.`
     })

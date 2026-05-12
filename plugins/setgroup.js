@@ -18,11 +18,8 @@ export default async (clients, m, { isOwner, isGroup }) => {
     saveDb()
 
     await clients.sendMessage(m.chat, {
-        text: `Grup *${targetName}* berhasil didaftarkan!\nPermintaan bergabung untuk grup ini sekarang akan diproses.\n\nBot akan mulai ulang...`,
+        text: `Grup *${targetName}* berhasil didaftarkan!\nPermintaan bergabung untuk grup ini sekarang akan diproses.`,
         contextInfo: { externalAdReply: AD_REPLY }
     })
     logger.info(`Grup terdaftar: ${m.chat} (${targetName})`)
-
-    await bail.delay(2000)
-    process.exit(0)
 }

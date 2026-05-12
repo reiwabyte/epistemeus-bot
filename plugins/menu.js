@@ -1,9 +1,14 @@
-export default async (clients, m, { isOwner }) => {
-    let ad = { ...AD_REPLY, renderLargerThumbnail: true, mediaUrl: process.env.THUMB_URL || 'https://files.covenant.sbs/6e029a06-04b3-413f-8f48-d97440a3a279.jpeg' }
+export default async (clients, m, { isOwner, isGroup }) => {
+    if (!isGroup) return
+
+    let ad = { ...AD_REPLY }
 
     if (!isOwner) {
+        let isManaged = db.groups?.some(g => g.id === m.chat)
+        let status = isManaged ? 'Grup Terdaftar' : 'Grup Belum Terdaftar'
+
         await clients.sendMessage(m.chat, {
-            text: 'Pilih perintah di bawah',
+            text: status,
             contextInfo: { externalAdReply: ad },
             interactiveMessage: {
                 title: 'Menu Publik',
@@ -20,12 +25,6 @@ export default async (clients, m, { isOwner }) => {
                                     rows: [
                                         { title: 'Batalkan Formulir', id: '.cancel', description: 'Batalkan proses yang berjalan' }
                                     ]
-                                },
-                                {
-                                    title: 'Lainnya',
-                                    rows: [
-                                        { title: 'Menu', id: '.menu', description: 'Tampilkan menu ini' }
-                                    ]
                                 }
                             ]
                         })
@@ -36,11 +35,30 @@ export default async (clients, m, { isOwner }) => {
         return
     }
 
-    let aiStatus = process.env.GEMINI_ENABLE === 'true' ? 'Aktif' : 'Nonaktif'
-    let stealthStatus = set.stealth ? 'AKTIF' : 'Nonaktif'
+    let approved = db.history?.filter(h => h.status === 'approved') || []
+    let rejected = db.history?.filter(h => h.status === 'rejected') || []
+    let recentApproved = approved.slice(-5).reverse()
+    let recentRejected = rejected.slice(-5).reverse()
+
+    let isManaged = db.groups?.some(g => g.id === m.chat)
+    let grupInfo = `\n*Grup ini:* ${isManaged ? 'TERDAFTAR' : 'BELUM TERDAFTAR'}\n`
+
+    let riwayatText = `*Daftar Peserta*${grupInfo}\n\n`
+    riwayatText += `*Diterima:*\n`
+    if (recentApproved.length) {
+        riwayatText += recentApproved.map(h => `${h.name} (${h.number})`).join('\n')
+    } else {
+        riwayatText += '(kosong)'
+    }
+    riwayatText += `\n\n*Ditolak:*\n`
+    if (recentRejected.length) {
+        riwayatText += recentRejected.map(h => `${h.name} (${h.number})`).join('\n')
+    } else {
+        riwayatText += '(kosong)'
+    }
 
     await clients.sendMessage(m.chat, {
-        text: `AI: ${aiStatus} | Stealth: ${stealthStatus}\n\nKetik manual jika ada parameter (reply/mention)`,
+        text: riwayatText,
         contextInfo: { externalAdReply: ad },
         interactiveMessage: {
             title: 'Panel Admin',
@@ -53,16 +71,6 @@ export default async (clients, m, { isOwner }) => {
                         title: 'Panel Admin',
                         sections: [
                             {
-                                title: 'Formulir Pendaftaran',
-                                rows: [
-                                    { title: 'Test Formulir', id: '.test', description: 'Simulasi formulir' },
-                                    { title: 'Batalkan', id: '.cancel', description: 'Batalkan formulir' },
-                                    { title: 'Cek Pending', id: '.cekpending', description: 'Lihat pendaftar tertunda' },
-                                    { title: 'Setujui', id: '.approve', description: 'Setujui pendaftar' },
-                                    { title: 'Tolak', id: '.reject', description: 'Tolak pendaftar' }
-                                ]
-                            },
-                            {
                                 title: 'Manajemen Grup',
                                 rows: [
                                     { title: 'Daftarkan Grup', id: '.setgroup', description: 'Daftarkan grup ini' },
@@ -71,22 +79,10 @@ export default async (clients, m, { isOwner }) => {
                                 ]
                             },
                             {
-                                title: 'Moderasi',
-                                rows: [
-                                    { title: 'Peringatan', id: '.warn', description: 'Beri peringatan anggota' },
-                                    { title: 'Keluarkan', id: '.kick', description: 'Keluarkan anggota' },
-                                    { title: 'Blokir', id: '.ban', description: 'Blokir permanen' },
-                                    { title: 'Buka Blokir', id: '.unban', description: 'Buka blokir' },
-                                    { title: 'Daftar Blokir', id: '.warns', description: 'Lihat blokir/peringatan' }
-                                ]
-                            },
-                            {
                                 title: 'Mode',
                                 rows: [
                                     { title: 'Mode Sendiri', id: '.self', description: 'Hanya owner' },
-                                    { title: 'Mode Publik', id: '.public', description: 'Semua orang' },
-                                    { title: 'Siluman', id: '.stealth', description: 'Sembunyikan menu admin' },
-                                    { title: 'Menu', id: '.menu', description: 'Tampilkan menu ini' }
+                                    { title: 'Mode Publik', id: '.public', description: 'Semua orang' }
                                 ]
                             }
                         ]

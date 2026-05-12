@@ -16,8 +16,6 @@ export default async (clients, m, { isOwner, isGroup, body, prefix, cmd }) => {
     let name = db.groups[idx].name
     db.groups.splice(idx, 1)
     saveDb()
-    await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil dihapus dari daftar.\n\nBot akan mulai ulang...` })
+    await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil dihapus dari daftar.` })
     logger.info(`Grup dihapus: ${targetJid}`)
-    await bail.delay(2000)
-    process.exit(0)
 }

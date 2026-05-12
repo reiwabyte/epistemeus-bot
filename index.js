@@ -1,14 +1,11 @@
 console.clear()
-import 'dotenv/config'
 import './src/config.js'
-import { loadThumbnail } from './src/config.js'
 import pino from 'pino'
 import { clientsConfig, smsg } from './src/utils/handler.js'
 import logger from './src/utils/logger.js'
 import caseHandler from './plugins/index.js'
 
 async function start() {
-    await loadThumbnail()
     let { state, saveCreds } = await bail.useMultiFileAuthState(pair.sesi)
     global.clients = await clientsConfig({
         logger: pino({ level: 'silent' }),
@@ -110,19 +107,14 @@ async function start() {
 
             let opening = `Halo! Sebelumnya kami mengucapkan terimakasih telah meminta bergabung ke grup ${groupName}.
 
-Kami perlu melakukan proses perkenalan singkat. Silakan jawab pertanyaan berikut satu per satu.
+Kami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lalu ketik *lanjutkan* untuk memulai.`
 
-1. Nama / Nama Panggilan / Nama Samaran:`
-
-            await clients.sendMessage(userJid, {
-                text: opening,
-                contextInfo: { externalAdReply: AD_REPLY }
-            })
-            logger.info(`Step 1 sent to ${userJid} for group ${groupJid}`)
+            await clients.sendMessage(userJid, { text: opening })
+            logger.info(`Opening sent to ${userJid} for group ${groupJid}`)
 
             pendingVerification.set(userJid.split('@')[0], {
                 groupJid,
-                status: 'waiting_answer',
+                status: 'waiting_confirmation',
                 step: 0,
                 answers: [],
                 timestamp: Date.now()
