@@ -28,15 +28,88 @@ function parseTable(md) {
     }
 }
 
+function toWhatsApp(text) {
+    let result = ''
+    let i = 0
+    while (i < text.length) {
+        if (text[i] === '`' && text[i + 1] === '`' && text[i + 2] === '`') {
+            let end = text.indexOf('```', i + 3)
+            if (end === -1) { result += text.slice(i); break }
+            result += text.slice(i, end + 3)
+            i = end + 3
+            continue
+        }
+        if (text[i] === '`') {
+            let end = text.indexOf('`', i + 1)
+            if (end !== -1) { result += text.slice(i, end + 1); i = end + 1; continue }
+        }
+        if (text[i] === '#' && (i === 0 || text[i - 1] === '\n')) {
+            let end = text.indexOf('\n', i)
+            let line = text.slice(i, end === -1 ? undefined : end).trim()
+            let content = line.replace(/^#{1,6}\s+/, '')
+            if (content) result += '*' + content + '*'
+            if (end !== -1) result += '\n'
+            i = end === -1 ? text.length : end + 1
+            continue
+        }
+        if (text.slice(i, i + 3) === '***') {
+            let end = text.indexOf('***', i + 3)
+            if (end !== -1) {
+                let inner = toWhatsApp(text.slice(i + 3, end))
+                result += '_*' + inner + '*_'
+                i = end + 3
+                continue
+            }
+        }
+        if (text.slice(i, i + 3) === '___') {
+            let end = text.indexOf('___', i + 3)
+            if (end !== -1) {
+                let inner = toWhatsApp(text.slice(i + 3, end))
+                result += '_' + inner + '_'
+                i = end + 3
+                continue
+            }
+        }
+        if (text.slice(i, i + 2) === '**') {
+            let end = text.indexOf('**', i + 2)
+            if (end !== -1 && end + 2 <= text.length) {
+                result += '*' + text.slice(i + 2, end) + '*'
+                i = end + 2
+                continue
+            }
+        }
+        if (text.slice(i, i + 2) === '__') {
+            let end = text.indexOf('__', i + 2)
+            if (end !== -1 && end + 2 <= text.length) {
+                result += '_' + text.slice(i + 2, end) + '_'
+                i = end + 2
+                continue
+            }
+        }
+        if (text.slice(i, i + 2) === '~~') {
+            let end = text.indexOf('~~', i + 2)
+            if (end !== -1 && end + 2 <= text.length) {
+                result += '~' + text.slice(i + 2, end) + '~'
+                i = end + 2
+                continue
+            }
+        }
+        result += text[i]
+        i++
+    }
+    return result
+}
+
 export function buildSubMessages(answer) {
+    let converted = toWhatsApp(answer)
     let codeRegex = /```(\w*)\n([\s\S]*?)```/g
     let submessages = []
     let lastEnd = 0
     let match
 
-    while ((match = codeRegex.exec(answer)) !== null) {
+    while ((match = codeRegex.exec(converted)) !== null) {
         if (match.index > lastEnd) {
-            submessages.push({ messageType: 2, messageText: answer.slice(lastEnd, match.index).trim() })
+            submessages.push({ messageType: 2, messageText: converted.slice(lastEnd, match.index).trim() })
         }
         let lang = match[1].toLowerCase() || ''
         if (!lang) lang = match[1] || ''
@@ -62,10 +135,10 @@ export function buildSubMessages(answer) {
     let hasCode = submessages.some(s => s.messageType === 5)
 
     if (!hasCode) {
-        let remaining = answer.slice(lastEnd).trim()
-        let tableMatch = (remaining || answer).match(/(?:\|.+\|(?:\r?\n))(?:\|[\s:|:-]+\|(?:\r?\n))(?:\|.+\|(?:\r?\n|$))+/)
+        let remaining = converted.slice(lastEnd).trim()
+        let tableMatch = (remaining || converted).match(/(?:\|.+\|(?:\r?\n))(?:\|[\s:|:-]+\|(?:\r?\n))(?:\|.+\|(?:\r?\n|$))+/)
         if (tableMatch) {
-            let src = remaining || answer
+            let src = remaining || converted
             let table = parseTable(tableMatch[0])
             if (table) {
                 let before = src.slice(0, tableMatch.index).trim()
@@ -79,12 +152,12 @@ export function buildSubMessages(answer) {
         if (remaining) {
             submessages.push({ messageType: 2, messageText: remaining })
         }
-    } else if (lastEnd < answer.length) {
-        submessages.push({ messageType: 2, messageText: answer.slice(lastEnd).trim() })
+    } else if (lastEnd < converted.length) {
+        submessages.push({ messageType: 2, messageText: converted.slice(lastEnd).trim() })
     }
 
     if (submessages.length === 0) {
-        submessages.push({ messageType: 2, messageText: answer })
+        submessages.push({ messageType: 2, messageText: converted })
     }
 
     return submessages
@@ -95,6 +168,7 @@ export async function sendRichOrPlain(clients, m, text) {
     try {
         await clients.sendRichMessage(m.chat, submessages, m)
     } catch {
-        await clients.sendMessage(m.chat, { text }, { quoted: m })
+        let plain = toWhatsApp(text)
+        await clients.sendMessage(m.chat, { text: plain }, { quoted: m })
     }
 }
