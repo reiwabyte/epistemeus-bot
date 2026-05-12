@@ -141,7 +141,7 @@ export async function smsg(clients, m) {
                 m.sender = raw ? bail.jidNormalizedUser(raw) : m.chat
             }
         } else {
-            m.sender = m.chat
+            m.sender = bail.jidNormalizedUser(m.chat)
         }
     }
 

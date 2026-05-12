@@ -40,7 +40,11 @@ async function start() {
 
             global.m = await smsg(clients, mek)
 
-            if (set.self && ![m.owner, clients.decodeJid(clients.user.id)].includes(m.sender)) return
+            if (set.self) {
+                let senderPhone = (m.sender || '').split('@')[0].replace(/[^0-9]/g, '')
+                let isOwner = owner.no.some(n => n.replace(/[^0-9]/g, '') === senderPhone)
+                if (!isOwner && clients.decodeJid(clients.user.id) !== m.sender) return
+            }
             await caseHandler(clients, m)
             logger.print(m)
         } catch (err) {

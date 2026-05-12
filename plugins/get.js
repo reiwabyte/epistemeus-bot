@@ -16,6 +16,19 @@ export default async (clients, m, { isOwner, body, prefix, cmd }) => {
         let truncated = html.length > 40000 ? html.slice(0, 40000) + '\n\n... (truncated)' : html
         await m.reply(truncated)
     } catch (e) {
+        if (e.message && e.message.includes('EAI_AGAIN') && !url.includes('.com') && !url.includes('.') && !url.includes('localhost')) {
+            let tryUrl = url + '.com'
+            try {
+                let { data } = await axios.get(tryUrl, {
+                    timeout: 15000,
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+                })
+                let html = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+                let truncated = html.length > 40000 ? html.slice(0, 40000) + '\n\n... (truncated)' : html
+                await m.reply(truncated)
+                return
+            } catch {}
+        }
         await m.reply('Gagal mengambil halaman: ' + e.message)
     }
 }
