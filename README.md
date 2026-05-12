@@ -17,19 +17,19 @@
 
 ---
 
-## ✨ Features
+## Features
 
 | Category | Commands |
 |----------|----------|
 | **Download** | `.tiktok`, `.tiktoksearch`, `.spotify`, `.play`, `.yt`, `.fb`, `.twitter`, `.ig`, `.mediafire` |
-| **AI** | `.hf` (Hugging Face), `.groq` (Groq LPU — super fast) |
+| **AI** | `.hf` (Hugging Face), `.groq` (Groq LPU) |
 | **Tools** | `.binary`, `.tourl`, `.removebg`, `.hd` (video upscale), `.lirik`, `.npmstalk`, `.githubstalk`, `.getpl`, `.getscrape` |
 | **Group** | `.kick`, `.add`, `.promote`, `.demote`, `.group`, `.link`, `.revoke`, `.setname`, `.setdesc`, `.tagall`, `.hidetag` |
 | **Owner** | `.self`, `.public`, `.setgroup`, `.delgroup`, `.listgroups`, `.approve`, `.reject`, `.cekpending`, `.ban`, `.unban`, `.warns`, `.banlist`, `.approvedlist`, `.log` |
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js** >= 20 (ESM)
 - **npm**
@@ -37,7 +37,7 @@
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ```bash
 git clone https://github.com/reiwabyte/epistemeus-bot.git
@@ -56,17 +56,13 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-# ── AI (Optional) ───────────────────────────
-# Tanpa ini, .hf tetap bisa dipakai tapi akan error
-# Dapatkan token gratis di:
+# -- AI (Optional) ----------------------------
 HF_TOKEN=
 
-# Tanpa ini, .groq tetap bisa dipakai tapi akan error
-# Dapatkan gratis di:
 GROQ_API_KEY=
 ```
 
-> **Note:** `.hf` dan `.groq` bersifat **opsional**. Jika tidak ada API key, fitur tersebut tidak bisa digunakan, namun bot tetap berjalan normal untuk fitur lainnya.
+> **Note:** `.hf` dan `.groq` bersifat opsional. Jika tidak ada API key, fitur tersebut tidak bisa digunakan, namun bot tetap berjalan normal untuk fitur lainnya.
 
 ### Configure Owner Number
 
@@ -78,7 +74,7 @@ let ownerNumbers = ['628xxxxxxxxxx']  // ganti dengan nomor kamu
 
 ---
 
-## ▶️ Running
+## Running
 
 ```bash
 npm start
@@ -94,9 +90,9 @@ npm run dev
 
 ---
 
-## 🧠 AI Features
+## AI Features
 
-### `.hf` — Hugging Face
+### `.hf` -- Hugging Face
 
 Menggunakan Hugging Face Inference Providers API (`Qwen2.5-72B-Instruct` untuk teks, `Qwen3.6-35B-A3B` untuk gambar).
 
@@ -105,27 +101,27 @@ Menggunakan Hugging Face Inference Providers API (`Qwen2.5-72B-Instruct` untuk t
 .hf analisis gambar ini  (reply foto dengan caption)
 ```
 
-**Setup:** `HF_TOKEN=` di `.env` — dapatkan di https://huggingface.co/settings/tokens
+**Setup:** `HF_TOKEN=` di `.env` -- dapatkan di https://huggingface.co/settings/tokens
 
-### `.groq` — Groq LPU
+### `.groq` -- Groq LPU
 
-Menggunakan Groq API dengan inference super cepat (LPU). Default model: `llama-3.3-70b-versatile`.
+Menggunakan Groq API dengan inference cepat (LPU). Default model: `llama-3.3-70b-versatile`.
 
 ```
-.groq                         → lihat daftar model + cara pakai
-.groq list                    → lihat semua model
-.groq setmodel [nama]         → ganti model default
-.groq jelaskan AI             → tanya groq
-.groq apa ini? (reply foto)   → tanya dengan gambar
+.groq                         -> lihat daftar model + cara pakai
+.groq list                    -> lihat semua model
+.groq setmodel [nama]         -> ganti model default
+.groq jelaskan AI             -> tanya groq
+.groq apa ini? (reply foto)   -> tanya dengan gambar
 ```
 
-**Setup:** `GROQ_API_KEY=` di `.env` — dapatkan gratis di https://console.groq.com/keys
+**Setup:** `GROQ_API_KEY=` di `.env` -- dapatkan gratis di https://console.groq.com/keys
 
-> 💡 **Tip:** Groq tidak perlu kartu kredit. Gratis 30 req/menit, 14.400 req/hari.
+> Tip: Groq tidak perlu kartu kredit. Gratis 30 req/menit, 14.400 req/hari.
 
 ---
 
-## 📦 Download Commands
+## Download Commands
 
 | Command | Deskripsi |
 |---------|-----------|
@@ -141,7 +137,7 @@ Menggunakan Groq API dengan inference super cepat (LPU). Default model: `llama-3
 
 ---
 
-## 🛠️ Tools
+## Tools
 
 | Command | Deskripsi |
 |---------|-----------|
@@ -158,7 +154,7 @@ Menggunakan Groq API dengan inference super cepat (LPU). Default model: `llama-3
 
 ---
 
-## 👥 Group Management
+## Group Management
 
 | Command | Deskripsi |
 |---------|-----------|
@@ -176,7 +172,7 @@ Menggunakan Groq API dengan inference super cepat (LPU). Default model: `llama-3
 
 ---
 
-## 🔐 Owner Commands
+## Owner Commands
 
 ### Mode
 | Command | Deskripsi |
@@ -207,18 +203,18 @@ Menggunakan Groq API dengan inference super cepat (LPU). Default model: `llama-3
 
 ---
 
-## 👥 Community Auto-Approve
+## Community Auto-Approve
 
 Jika grup-grup terdaftar dalam **satu komunitas WhatsApp** yang sama, maka:
 
-1. User yang mengisi formulir dan **disetujui di satu grup** → otomatis di-acc di **semua grup** dalam komunitas tersebut
-2. User yang sudah terverifikasi bergabung ke grup lain di komunitas yang sama → **langsung masuk tanpa formulir**
+1. User yang mengisi formulir dan disetujui di satu grup akan otomatis di-acc di semua grup dalam komunitas tersebut
+2. User yang sudah terverifikasi bergabung ke grup lain di komunitas yang sama akan langsung masuk tanpa formulir
 
-Grup yang **tidak** tergabung dalam komunitas → approval bersifat per-grup.
+Grup yang tidak tergabung dalam komunitas akan menggunakan approval per-grup.
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 epistemeus-bot/
@@ -253,7 +249,7 @@ epistemeus-bot/
 │   └── ...
 ├── media/
 │   └── menu.jpeg            # Default thumbnail
-├── tmp/                     # Temp files (auto-clean)
+├── tmp/                     # Temp files
 ├── session/                 # Auth session (gitignored)
 ├── .env                     # Environment (gitignored)
 └── database.json            # Database (gitignored)
@@ -261,7 +257,7 @@ epistemeus-bot/
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Semua konfigurasi di `src/config.js`:
 
@@ -271,23 +267,3 @@ Semua konfigurasi di `src/config.js`:
 | `set.prefix` | `['.']` | Prefix commands |
 | `set.self` | `false` | Mode self/public |
 | `pair.no` | `'6283891882373'` | Nomor untuk pairing |
-
----
-
-## 🧹 Auto Maintenance
-
-- **Temp files:** `tmp/` dibersihkan setiap 25 menit
-- **Memory:** Bot restart otomatis jika RAM > 250MB
-- **Database:** `database.json` auto-save setiap perubahan
-
----
-
-## 📝 License
-
-MIT © reiwabyte
-
----
-
-<p align="center">
-  <a href="https://github.com/reiwabyte/epistemeus-bot">GitHub</a>
-</p>
