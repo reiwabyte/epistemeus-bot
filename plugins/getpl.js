@@ -5,7 +5,11 @@ export default async (clients, m, { isOwner, prefix }) => {
     if (!isOwner) return
 
     let input = m.body.slice(m.body.indexOf(' ') + 1).trim()
-    if (!input) return m.reply('Gunakan: ' + prefix + 'getpl [nama plugin]\nContoh: ' + prefix + 'getpl spotify')
+    if (!input) {
+        let files = fs.readdirSync(process.cwd() + '/plugins/').filter(f => f.endsWith('.js')).sort()
+        let list = files.map((f, i) => `${i + 1}. ${f.replace('.js', '')}`).join('\n')
+        return m.reply('*Daftar Plugin:*\n\n' + list + '\n\nGunakan: ' + prefix + 'getpl [nama]\nContoh: ' + prefix + 'getpl spotify')
+    }
 
     let filePath = path.join(process.cwd(), 'plugins', input + '.js')
     if (!fs.existsSync(filePath)) return m.reply('Plugin "' + input + '.js" tidak ditemukan di folder plugins/')
