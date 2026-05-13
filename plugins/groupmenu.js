@@ -16,7 +16,8 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'setname [nama]\n'
     teks += '-' + prefix + 'setdesc [deskripsi]\n'
     teks += '-' + prefix + 'tagall\n'
-    teks += '-' + prefix + 'hidetag [pesan]'
+    teks += '-' + prefix + 'hidetag [pesan]\n'
+    teks += '-' + prefix + 'swgc (reply media/teks)'
 
     await clients.sendMessage(m.chat, {
         text: teks,

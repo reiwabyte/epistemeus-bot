@@ -23,7 +23,8 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'setname [nama]\n'
     teks += '-' + prefix + 'setdesc [deskripsi]\n'
     teks += '-' + prefix + 'tagall\n'
-    teks += '-' + prefix + 'hidetag [pesan]\n\n'
+    teks += '-' + prefix + 'hidetag [pesan]\n'
+    teks += '-' + prefix + 'swgc (reply media/teks)\n\n'
     teks += '*Verifikasi & Moderasi*\n'
     teks += '-' + prefix + 'approve\n'
     teks += '-' + prefix + 'reject\n'
@@ -47,7 +48,6 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'ig [url]\n'
     teks += '-' + prefix + 'mediafire [url]\n\n'
     teks += '*Tools & Utility*\n'
-    teks += '-' + prefix + 'hf [pertanyaan]\n'
     teks += '-' + prefix + 'groq [pertanyaan | list | setmodel]\n'
     teks += '-' + prefix + 'binary encode/decode\n'
     teks += '-' + prefix + 'tourl (reply media)\n'
@@ -58,7 +58,10 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'githubstalk [username]\n'
     teks += '-' + prefix + 'getpl [nama plugin]\n'
     teks += '-' + prefix + 'getscrape [nama scraper]\n'
-    teks += '-' + prefix + 'get [url]'
+    teks += '-' + prefix + 'get [url]\n'
+    teks += '-' + prefix + 'jurnal [kata kunci]\n'
+    teks += '-' + prefix + 'paper [doi]\n'
+    teks += '-' + prefix + 'getpdf [doi]'
 
     await clients.sendMessage(m.chat, {
         text: teks,

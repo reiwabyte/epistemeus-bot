@@ -15,6 +15,13 @@ function setCached(jid, data) {
     groupMetaCache.set(jid, { data, ts: Date.now() })
 }
 
+export function cleanupCache() {
+    const cutoff = Date.now() - STALE_TTL
+    for (const [jid, entry] of groupMetaCache) {
+        if (entry.ts < cutoff) groupMetaCache.delete(jid)
+    }
+}
+
 function updateParticipantsCache(id, participants, action) {
     const cached = groupMetaCache.get(id)
     if (!cached?.data?.participants) return false
@@ -205,6 +212,7 @@ export async function smsg(clients, m) {
         }, { quoted: m, ...options })
     }
 
+    m.download = () => downloadMediaMessage(m)
     m.copy = () => smsg(clients, M.fromObject(M.toObject(m)))
     m.react = (e, key = m.key) => clients.sendMessage(m.chat, { react: { text: e, key } })
 
@@ -212,9 +220,12 @@ export async function smsg(clients, m) {
 }
 
 async function downloadMediaMessage(message) {
-    let mime = (message.msg || message).mimetype || ''
-    let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
-    const stream = await bail.downloadContentFromMessage(message, messageType)
+    const norm = bail.normalizeMessageContent(message?.message || message)
+    const mtype = bail.getContentType(norm)
+    const data = mtype ? norm?.[mtype] : norm
+    if (!data?.directPath) return null
+    const mediaType = mtype ? mtype.replace(/Message/gi, '').toLowerCase() : (data.mimetype || '').split('/')[0]
+    const stream = await bail.downloadContentFromMessage(data, mediaType)
     let buffer = Buffer.from([])
     for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
     return buffer

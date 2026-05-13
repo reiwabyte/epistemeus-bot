@@ -27,6 +27,7 @@ global.grup = db
 global.logger = logger
 
 global.pendingVerification = new Map()
+global.pendingStatus = new Map()
 
 global.bail = bail
 global.chalk = chalk

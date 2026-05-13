@@ -3,7 +3,7 @@ import './src/config.js'
 import fs from 'fs'
 import path from 'path'
 import pino from 'pino'
-import { clientsConfig, smsg } from './src/utils/handler.js'
+import { clientsConfig, smsg, cleanupCache } from './src/utils/handler.js'
 import logger from './src/utils/logger.js'
 import caseHandler from './plugins/index.js'
 
@@ -46,6 +46,27 @@ async function start() {
                 if (!isOwner && clients.decodeJid(clients.user.id) !== m.sender) return
             }
             await caseHandler(clients, m)
+            const pend = global.pendingStatus?.get(m.sender)
+            if (pend && Date.now() - pend.timestamp < 120000 && !m.isGroup) {
+                let target = m.body
+                if (!target?.includes('@g.us')) {
+                    const ir = m.message?.interactiveResponseMessage?.nativeFlowResponseMessage
+                    if (ir) {
+                        try { target = JSON.parse(ir.paramsJson || '{}').id } catch {}
+                    }
+                }
+                if (target?.includes('@g.us')) {
+                    global.pendingStatus.delete(m.sender)
+                    await clients.sendMessage(target, { groupStatusMessage: pend.content })
+                    m.reply('Status diposting ke ' + target.split('@')[0])
+                    for (const key of ['image', 'video', 'audio']) {
+                        const url = pend.content[key]?.url
+                        if (url && typeof url === 'string' && url.includes('swgc_')) {
+                            import('fs/promises').then(fs => fs.unlink(url).catch(() => {}))
+                        }
+                    }
+                }
+            }
             logger.print(m)
         } catch (err) {
             console.error(err)
@@ -159,8 +180,16 @@ Kami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lal
     })
 
     setInterval(() => {
+        cleanupCache()
+        for (const [k, v] of global.pendingVerification || []) {
+            if (Date.now() - v.timestamp > 300000) global.pendingVerification.delete(k)
+        }
+        for (const [k, v] of global.pendingStatus || []) {
+            if (Date.now() - v.timestamp > 180000) global.pendingStatus.delete(k)
+        }
         let mem = process.memoryUsage().rss / 1024 / 1024
-        if (mem > 250) {
+        if (typeof global.gc === 'function' && mem > 350) global.gc()
+        if (mem > 500) {
             logger.warn(`Memory ${mem.toFixed(0)}MB, restarting...`)
             process.exit(1)
         }

@@ -7,7 +7,6 @@ export default async (clients, m, { prefix }) => {
     let teks = ''
     teks += '*Tools Menu*\n\n'
     teks += '*AI*\n'
-    teks += '-' + prefix + 'hf [pertanyaan]\n'
     teks += '-' + prefix + 'groq [pertanyaan | list | setmodel]\n\n'
     teks += '*Utility*\n'
     teks += '-' + prefix + 'binary encode [teks]\n'
@@ -19,7 +18,8 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'npmstalk [package]\n'
     teks += '-' + prefix + 'githubstalk [username]\n'
     teks += '-' + prefix + 'getpl [nama plugin]\n'
-    teks += '-' + prefix + 'getscrape [nama scraper]'
+    teks += '-' + prefix + 'getscrape [nama scraper]\n'
+    teks += '-' + prefix + 'jurnal [kata kunci]'
 
     await clients.sendMessage(m.chat, {
         text: teks,
