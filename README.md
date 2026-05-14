@@ -23,9 +23,10 @@
 |----------|----------|
 | **Download** | `.tiktok`, `.spotify`, `.play`, `.yt`, `.fb`, `.twitter`, `.ig`, `.mediafire` |
 | **AI** | `.hf` (Hugging Face), `.groq` (Groq LPU) |
+| **Academic** | `.jurnal [judul]` (cari + auto PDF), `.paper [doi]`, `.getpdf [doi]` |
 | **Tools** | `.binary`, `.tourl`, `.removebg`, `.hd` (video upscale), `.lirik`, `.npmstalk`, `.githubstalk`, `.getpl`, `.getscrape` |
 | **Group** | `.kick`, `.add`, `.promote`, `.demote`, `.group`, `.link`, `.revoke`, `.setname`, `.setdesc`, `.tagall`, `.hidetag` |
-| **Owner** | `.self`, `.public`, `.setgroup`, `.delgroup`, `.listgroups`, `.approve`, `.reject`, `.cekpending`, `.ban`, `.unban`, `.warns`, `.banlist`, `.approvedlist`, `.log` |
+| **Owner** | `.self`, `.public`, `.setgroup`, `.delgroup`, `.listgroups`, `.approve`, `.reject`, `.cekpending`, `.ban`, `.unban`, `.warns`, `.banlist`, `.approvedlist`, `.log`, `.setgscookies` |
 
 ---
 
@@ -33,6 +34,8 @@
 
 - **Node.js** >= 20 (ESM)
 - **npm**
+- **Google Chrome / Chromium** (untuk Google Scholar scraping via Puppeteer)
+- **Python 3** + `pip` (untuk PDF generation fallback)
 - WhatsApp account (for pairing)
 
 ---
@@ -43,7 +46,19 @@
 git clone https://github.com/reiwabyte/epistemeus-bot.git
 cd epistemeus-bot
 npm install
+pip install -r requirements.txt
 ```
+
+### Chrome untuk Google Scholar
+
+Bot menggunakan Google Scholar sebagai sumber pencarian jurnal utama via Puppeteer. Chrome sudah di-include sebagai dependensi sistem, tapi jika di lingkungan tanpa Chrome:
+
+```bash
+# Ubuntu/Debian
+sudo apt install google-chrome-stable
+```
+
+Atau atur `executablePath` di `scrape/googlescholar.js` sesuai path Chrome kamu.
 
 ### Configure `.env`
 
@@ -266,5 +281,71 @@ Semua konfigurasi di `src/config.js`:
 | `set.prefix` | `['.']` | Prefix commands |
 | `set.self` | `false` | Mode self/public |
 | `pair.no` | `'6283891882373'` | Nomor untuk pairing |
+
+---
+
+## Academic Features
+
+Bot dapat mencari paper akademik dari **Google Scholar** (via Puppeteer stealth) dan **12 sumber lainnya** (CrossRef, PubMed, arXiv, Semantic Scholar, Zenodo, dll).
+
+### `.jurnal [judul]`
+
+Cari paper berdasarkan judul, ambil paper terbaik, langsung download PDF-nya.
+
+```
+.jurnal Is Justified True Belief Knowledge?
+.jurnal machine learning in healthcare
+```
+
+### `.paper [doi/url]`
+
+Lihat detail paper (abstrak, penulis, tahun, dll).
+
+```
+.paper 10.1038/s41586-023-06221-2
+```
+
+### `.getpdf [doi/url]`
+
+Download PDF dari DOI atau URL. Mencoba:
+1. PDF langsung dari Google Scholar (jika tersedia di hasil pencarian)
+2. Direct PDF dari publisher
+3. Sci-Hub
+4. Scrape konten + generate PDF via Python (fallback)
+
+```
+.getpdf 10.1038/s41586-023-06221-2
+```
+
+### Google Scholar Cookies
+
+Google Scholar terkadang memblokir akses otomatis. Untuk menghindari limit, import cookies dari browser:
+
+1. Buka Google Scholar di Chrome
+2. Install ekstensi seperti "Get cookies.txt" (Netscape format)
+3. Export cookies → kirim file ke bot
+4. Atau kirim langsung teks cookies:
+
+```
+.setgscookies [paste cookies]
+```
+
+Cek status cookies:
+
+```
+.setgscookies
+```
+
+---
+
+## Dependencies
+
+| Package | Kegunaan |
+|---------|----------|
+| `puppeteer-core` | Browser automation untuk Google Scholar |
+| `puppeteer-extra` | Stealth plugin untuk bypass deteksi bot |
+| `cheerio` | HTML parsing untuk scraping |
+| `axios` | HTTP client |
+| `fpdf2` (Python) | PDF generation fallback |
 
 
