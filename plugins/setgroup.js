@@ -1,11 +1,33 @@
-export default async (clients, m, { isOwner, isGroup }) => {
+export default async (clients, m, { isOwner, isGroup, body, prefix, cmd }) => {
     if (!isOwner) return
+
+    let input = body.slice(prefix.length + cmd.length).trim()
 
     if (isGroup) {
         let meta = await clients.groupMetadata(m.chat).catch(() => null)
         let targetName = meta?.subject || m.chat
 
         let exists = db.groups?.find(g => g.id === m.chat)
+
+        // setgroup <mode> — set verification mode
+        if (input === '1' || input === '2') {
+            let mode = parseInt(input)
+            if (exists) {
+                exists.mode = mode
+                saveDb()
+                await m.reply(`Mode verifikasi grup *${targetName}* diubah ke ${mode}${mode === 2 ? ' (pertanyaan kustom)' : ' (standar)'}`)
+                return
+            }
+            // auto register if not exists
+            if (!db.groups) db.groups = []
+            let community = meta?.linkedParent || null
+            db.groups.push({ id: m.chat, name: targetName, community, mode })
+            saveDb()
+            await m.reply(`Grup *${targetName}* didaftarkan dengan mode ${mode}${mode === 2 ? ' (pertanyaan kustom)' : ' (standar)'}`)
+            return
+        }
+
+        // setgroup — register group with default mode
         if (exists) {
             exists.name = targetName
             saveDb()
@@ -15,11 +37,11 @@ export default async (clients, m, { isOwner, isGroup }) => {
 
         if (!db.groups) db.groups = []
         let community = meta?.linkedParent || null
-        db.groups.push({ id: m.chat, name: targetName, community })
+        db.groups.push({ id: m.chat, name: targetName, community, mode: 1 })
         saveDb()
 
         await clients.sendMessage(m.chat, {
-            text: `Grup *${targetName}* berhasil didaftarkan!\nPermintaan bergabung untuk grup ini sekarang akan diproses.`,
+            text: `Grup *${targetName}* berhasil didaftarkan!\nPermintaan bergabung untuk grup ini sekarang akan diproses.\n\n💡 *Ingin pakai pertanyaan kustom?*\nGunakan:\n${prefix}setgroup 2 — ubah ke mode kustom\n${prefix}pertanyaangroup q1|q2|q3... — atur soal`,
             contextInfo: { externalAdReply: AD_REPLY }
         })
         logger.info(`Grup terdaftar: ${m.chat} (${targetName})`)

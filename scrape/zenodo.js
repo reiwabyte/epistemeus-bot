@@ -1,11 +1,20 @@
 import axios from 'axios'
 
-const BASE = 'https://zenodo.org/api/records'
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+
+function buildPdfUrl(item, pdfFile) {
+  if (!pdfFile) return ''
+  const recordId = item.id
+  const fileKey = pdfFile.key
+  if (!recordId || !fileKey) return ''
+  return `https://zenodo.org/records/${recordId}/files/${encodeURIComponent(fileKey)}?download=1`
+}
 
 export async function searchZenodo(query, rows = 10) {
-  const { data } = await axios.get(BASE, {
+  const { data } = await axios.get('https://zenodo.org/api/records', {
     params: { q: query, size: rows, sort: 'bestmatch' },
-    timeout: 30000
+    timeout: 30000,
+    headers: { 'User-Agent': UA }
   })
   return (data.hits?.hits || []).map(item => {
     const meta = item.metadata || {}
@@ -20,9 +29,9 @@ export async function searchZenodo(query, rows = 10) {
       year: item.created?.slice(0, 4) || meta.publication_date?.slice(0, 4) || '',
       publisher: 'Zenodo (CERN)',
       type: meta.resource_type?.title || 'publication',
-      url: item.links?.doi || item.links?.html || `https://doi.org/${doi}`,
+      url: `https://zenodo.org/records/${item.id}`,
       abstract: meta.description ? meta.description.replace(/<[^>]*>/g, '').trim() : '',
-      pdfUrl: pdfFile?.links?.self || pdfFile?.download_url || '',
+      pdfUrl: buildPdfUrl(item, pdfFile),
       source: 'Zenodo'
     }
   })
@@ -30,8 +39,10 @@ export async function searchZenodo(query, rows = 10) {
 
 export async function getZenodoByDOI(doi) {
   const cleanDoi = doi.replace('https://doi.org/', '')
-  const { data } = await axios.get(`${BASE}`, {
-    params: { q: `doi:"${cleanDoi}"`, size: 1 }
+  const { data } = await axios.get('https://zenodo.org/api/records', {
+    params: { q: `doi:"${cleanDoi}"`, size: 1 },
+    timeout: 30000,
+    headers: { 'User-Agent': UA }
   })
   const item = data.hits?.hits?.[0]
   if (!item) return null
@@ -44,9 +55,9 @@ export async function getZenodoByDOI(doi) {
     year: item.created?.slice(0, 4) || meta.publication_date?.slice(0, 4) || '',
     publisher: 'Zenodo (CERN)',
     type: meta.resource_type?.title || 'publication',
-    url: item.links?.doi || item.links?.html || '',
+    url: `https://zenodo.org/records/${item.id}`,
     abstract: meta.description ? meta.description.replace(/<[^>]*>/g, '').trim() : '',
-    pdfUrl: pdfFile?.links?.self || '',
+    pdfUrl: buildPdfUrl(item, pdfFile),
     source: 'Zenodo'
   }
 }

@@ -1,6 +1,7 @@
 import fs from 'fs'
 
-export default async (clients, m, { prefix }) => {
+export default async (clients, m, { prefix, isOwner }) => {
+    if (!isOwner) return
     let img
     try { img = fs.readFileSync(process.cwd() + '/media/menu.jpeg') } catch { img = null }
 
@@ -10,7 +11,7 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'self\n'
     teks += '-' + prefix + 'public\n\n'
     teks += '*Manajemen Grup*\n'
-    teks += '-' + prefix + 'setgroup\n'
+    teks += '-' + prefix + 'setgroup [1|2]\n'
     teks += '-' + prefix + 'delgroup\n'
     teks += '-' + prefix + 'listgroups\n'
     teks += '-' + prefix + 'kick @user\n'
@@ -35,6 +36,7 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'warns\n'
     teks += '-' + prefix + 'banlist\n'
     teks += '-' + prefix + 'approvedlist\n'
+    teks += '-' + prefix + 'pertanyaangroup [q1|q2|q3...]\n'
     teks += '-' + prefix + 'log\n'
     teks += '-' + prefix + 'eval [kode js]\n'
     teks += '-' + prefix + 'exec [perintah shell]\n\n'
@@ -61,7 +63,9 @@ export default async (clients, m, { prefix }) => {
     teks += '-' + prefix + 'get [url]\n'
     teks += '-' + prefix + 'jurnal [kata kunci]\n'
     teks += '-' + prefix + 'paper [doi]\n'
-    teks += '-' + prefix + 'getpdf [doi]'
+    teks += '-' + prefix + 'getpdf [doi]\n'
+    teks += '-' + prefix + 'upch (reply audio)\n'
+    teks += '-' + prefix + 'cekidch'
 
     await clients.sendMessage(m.chat, {
         text: teks,

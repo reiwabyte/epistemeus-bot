@@ -7,9 +7,7 @@ async function downloadImg(message, messageType) {
     return buffer
 }
 
-export default async (clients, m, { isOwner, prefix }) => {
-    if (!isOwner) return
-
+export default async (clients, m, { prefix }) => {
     let isQuoted = !!m.quoted
     let media = isQuoted ? m.quoted : m
     let mediaType = isQuoted ? m.quoted.mtype : m.mtype

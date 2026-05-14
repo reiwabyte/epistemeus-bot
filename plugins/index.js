@@ -15,6 +15,7 @@ import banlistCmd from './banlist.js'
 import groqCmd from './groq.js'
 import groupStatusCmd from './group-status.js'
 import searchjurnalCmd, { paper as paperCmd, getpdf as getpdfCmd } from './searchjurnal.js'
+import { setCookies as setGSCookies, getCookieCount } from '../scrape/unified.js'
 import logCmd from './log.js'
 import kickCmd from './kick.js'
 import addCmd from './add.js'
@@ -47,7 +48,11 @@ import npmstalkCmd from './npmstalk.js'
 import githubstalkCmd from './githubstalk.js'
 import getplCmd from './getpl.js'
 import getscrapeCmd from './getscrape.js'
+import pertanyaangroupCmd from './pertanyaangroup.js'
 import ownermenuCmd from './ownermenu.js'
+import rvoCmd from './rvo.js'
+import upchCmd from './upch.js'
+import cekidchCmd from './cekidch.js'
 import getCmd from './get.js'
 import evalCmd from './eval.js'
 import execCmd from './exec.js'
@@ -74,6 +79,7 @@ const commands = {
     swgc: groupStatusCmd, statusgroup: groupStatusCmd,
     downloadmenu: downloadmenuCmd,
     tiktok: tiktokCmd,
+    tt: tiktokCmd,
     spotify: spotifyCmd,
     play: playCmd,
     mediafire: mediafireCmd,
@@ -96,10 +102,46 @@ const commands = {
     approvedlist: approvedlistCmd,
     getscrape: getscrapeCmd,
     ownermenu: ownermenuCmd,
+    upch: upchCmd,
+    cekidch: cekidchCmd,
+    rvo: rvoCmd,
     searchjurnal: searchjurnalCmd,
     jurnal: searchjurnalCmd,
     paper: paperCmd,
-    getpdf: getpdfCmd
+    getpdf: getpdfCmd,
+    pertanyaangroup: pertanyaangroupCmd,
+    setgscookies: async (clients, m, { body, prefix, cmd, isOwner }) => {
+      if (!isOwner) return
+      const raw = body.slice(prefix.length + cmd.length).trim()
+      if (!raw) {
+        const count = getCookieCount()
+        return m.reply(count > 0 ? `Google Scholar cookies aktif (${count} cookies). Kirim file .txt cookies Netscape untuk ganti.` : 'Belum ada cookies Google Scholar. Kirim file .txt cookies Netscape format dari browser.')
+      }
+      const quoted = m.quoted || null
+      let cookieText = raw
+      if (quoted?.message?.documentMessage) {
+        try {
+          const media = await clients.downloadMediaMessage(quoted)
+          cookieText = media.toString('utf-8')
+        } catch {
+          return m.reply('Gagal download file cookie')
+        }
+      }
+      const ok = setGSCookies(cookieText)
+      if (ok) return m.reply(`✅ Cookies Google Scholar diimport (${getCookieCount()} cookies)`)
+      m.reply('Gagal parse cookies. Format: Netscape HTTP Cookie File (dari browser)')
+    }
+}
+
+function getQuestions(groupJid) {
+  const gd = db.groups?.find(g => g.id === groupJid)
+  if (gd?.mode === 2 && gd.questions?.length) return gd.questions
+  return null
+}
+
+function getQuestionCount(groupJid) {
+  const custom = getQuestions(groupJid)
+  return custom ? custom.length : 7
 }
 
 const STEP_QUESTIONS = [
@@ -112,7 +154,17 @@ const STEP_QUESTIONS = [
     '7. Apakah kamu memiliki karya formal/nonformal? Jika ada, sebutkan atau kirim file/link nya.'
 ]
 
-async function sendQuestion(clients, jid, step, groupName) {
+async function sendQuestion(clients, jid, step, groupName, groupJid) {
+    const custom = getQuestions(groupJid)
+    if (custom) {
+      const q = custom[step]
+      let text = `${step + 1}. ${q.text}`
+      if (q.type === 2) {
+        return clients.sendMessage(jid, { text: `${text}\n\nBalas *Ya* atau *Tidak*` })
+      }
+      return clients.sendMessage(jid, { text })
+    }
+
     let text = STEP_QUESTIONS[step]
     if (step === 3) text += ` ${groupName}:`
 
@@ -131,8 +183,14 @@ async function sendApprovalToOwner(clients, m, data) {
         ? (data.groupJid?.endsWith('@g.us') ? (await clients.groupMetadata(data.groupJid).catch(() => null))?.subject || 'Grup' : 'Epistemeia')
         : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
+    const custom = getQuestions(data.groupJid)
     let formatted = data.answers.map((a, i) => {
         if (a === undefined || a === null) return ''
+        if (custom) {
+          const q = custom[i]
+          if (!q) return ''
+          return `• *${i + 1}. ${q.text}*\n  ${a}`
+        }
         if (i === 6 && a.toLowerCase() === 'tidak') return ''
         let q = STEP_QUESTIONS[i]
         if (i === 3) q += ` ${groupName}:`
@@ -273,9 +331,9 @@ export default async (clients, m) => {
                 let meta = clients.chats?.[groupJid] || await clients.groupMetadata(groupJid).catch(() => null)
                 let name = meta?.subject || groupJid
                 let community = meta?.linkedParent || null
-                db.groups.push({ id: groupJid, name, community })
+                db.groups.push({ id: groupJid, name, community, mode: 1 })
                 saveDb()
-                await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil didaftarkan!` })
+                await clients.sendMessage(m.chat, { text: `Grup *${name}* berhasil didaftarkan!\n\n💡 *Ingin pakai pertanyaan kustom?*\nGunakan:\n.setgroup 2 — ubah ke mode kustom\n.pertanyaangroup q1|q2|q3... — atur soal` })
                 logger.info(`Grup terdaftar dari DM: ${groupJid} (${name})`)
                 return
             }
@@ -468,11 +526,14 @@ export default async (clients, m) => {
                         : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
                     data.status = 'waiting_answer'
-                    await sendQuestion(clients, m.chat, 0, groupName)
+                    data.totalQuestions = getQuestionCount(data.groupJid)
+                    await sendQuestion(clients, m.chat, 0, groupName, data.groupJid)
                     pendingVerification.set(phone, data)
                     return
                 }
-                await clients.sendMessage(m.chat, { text: 'Ketik *lanjutkan* untuk memulai formulir.' })
+                const custom = getQuestions(data.groupJid)
+                const msg = custom ? 'Ketik *lanjutkan* untuk memulai verifikasi.' : 'Ketik *lanjutkan* untuk memulai formulir.'
+                await clients.sendMessage(m.chat, { text: msg })
                 return
             }
 
@@ -487,19 +548,23 @@ export default async (clients, m) => {
                     : db.groups?.find(g => g.id === data.groupJid)?.name || 'Grup'
 
                 data.step++
+                const totalQ = data.totalQuestions || getQuestionCount(data.groupJid)
 
-                if (data.step < STEP_QUESTIONS.length) {
-                    await sendQuestion(clients, m.chat, data.step, groupName)
+                if (data.step < totalQ) {
+                    await sendQuestion(clients, m.chat, data.step, groupName, data.groupJid)
                     pendingVerification.set(phone, data)
                     return
                 }
 
-                let lastQ = data.answers[6]
-                if (lastQ && lastQ.toLowerCase() === 'ya') {
-                    data.status = 'waiting_karya'
-                    await clients.sendMessage(m.chat, { text: 'Izinkan kami melihat karya ilmiah anda. Silakan kirim berkas (foto, PDF, Word) atau tautan web.\n\nKetik *selesai* jika sudah selesai mengirim.' })
-                    pendingVerification.set(phone, data)
-                    return
+                const custom = getQuestions(data.groupJid)
+                if (!custom) {
+                  let lastQ = data.answers[6]
+                  if (lastQ && lastQ.toLowerCase() === 'ya') {
+                      data.status = 'waiting_karya'
+                      await clients.sendMessage(m.chat, { text: 'Izinkan kami melihat karya ilmiah anda. Silakan kirim berkas (foto, PDF, Word) atau tautan web.\n\nKetik *selesai* jika sudah selesai mengirim.' })
+                      pendingVerification.set(phone, data)
+                      return
+                  }
                 }
 
                 data.status = 'waiting_approval'

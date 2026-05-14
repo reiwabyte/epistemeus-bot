@@ -23,10 +23,10 @@
 |----------|----------|
 | **Download** | `.tiktok`, `.spotify`, `.play`, `.yt`, `.fb`, `.twitter`, `.ig`, `.mediafire` |
 | **AI** | `.hf` (Hugging Face), `.groq` (Groq LPU) |
-| **Academic** | `.jurnal [judul]` (cari + auto PDF), `.paper [doi]`, `.getpdf [doi]` |
+| **Academic** | `.jurnal [judul]` (cari + auto PDF dari Google Scholar/Zenodo), `.paper [doi]`, `.getpdf [doi]`, `.setgscookies` |
 | **Tools** | `.binary`, `.tourl`, `.removebg`, `.hd` (video upscale), `.lirik`, `.npmstalk`, `.githubstalk`, `.getpl`, `.getscrape` |
 | **Group** | `.kick`, `.add`, `.promote`, `.demote`, `.group`, `.link`, `.revoke`, `.setname`, `.setdesc`, `.tagall`, `.hidetag` |
-| **Owner** | `.self`, `.public`, `.setgroup`, `.delgroup`, `.listgroups`, `.approve`, `.reject`, `.cekpending`, `.ban`, `.unban`, `.warns`, `.banlist`, `.approvedlist`, `.log`, `.setgscookies` |
+| **Owner** | `.self`, `.public`, `.setgroup`, `.delgroup`, `.listgroups`, `.approve`, `.reject`, `.cekpending`, `.ban`, `.unban`, `.warns`, `.banlist`, `.approvedlist`, `.log` |
 
 ---
 
@@ -34,8 +34,7 @@
 
 - **Node.js** >= 20 (ESM)
 - **npm**
-- **Google Chrome / Chromium** (untuk Google Scholar scraping via Puppeteer)
-- **Python 3** + `pip` (untuk PDF generation fallback)
+- **Google Chrome / Chromium** (wajib untuk Google Scholar scraping via Puppeteer)
 - WhatsApp account (for pairing)
 
 ---
@@ -43,41 +42,52 @@
 ## Installation
 
 ```bash
+# Clone repo
 git clone https://github.com/reiwabyte/epistemeus-bot.git
 cd epistemeus-bot
+
+# Install Node.js dependencies (termasuk puppeteer-extra, ourin-baileys, dll)
 npm install
-pip install -r requirements.txt
+
+# Install Chrome (wajib!)
+sudo apt install google-chrome-stable -y
+
+# Copy & edit environment
+cp .env.example .env
+nano .env
 ```
 
-### Chrome untuk Google Scholar
+### Daftar Package (Node.js)
 
-Bot menggunakan Google Scholar sebagai sumber pencarian jurnal utama via Puppeteer. Chrome sudah di-include sebagai dependensi sistem, tapi jika di lingkungan tanpa Chrome:
-
-```bash
-# Ubuntu/Debian
-sudo apt install google-chrome-stable
-```
-
-Atau atur `executablePath` di `scrape/googlescholar.js` sesuai path Chrome kamu.
+| Package | Version | Kegunaan |
+|---------|---------|----------|
+| `ourin-baileys` | ^0.7.14 | WhatsApp API (WebSocket) |
+| `axios` | ^1.16.0 | HTTP client untuk download & API calls |
+| `cheerio` | ^1.2.0 | HTML parsing untuk scraping |
+| `puppeteer-core` | ^24.43.1 | Browser automation untuk Google Scholar |
+| `puppeteer-extra` | ^3.3.6 | Plugin system untuk puppeteer |
+| `puppeteer-extra-plugin-stealth` | ^2.11.2 | Bypass deteksi bot di Google Scholar |
+| `chalk` | ^5.4.1 | Terminal colored output |
+| `dotenv` | ^17.4.2 | Environment variables (.env) |
+| `pino` | ^9.6.0 | Logger |
+| `sharp` | ^0.34.5 | Image processing (removebg, HD) |
+| `@imgly/background-removal-node` | ^1.4.5 | Remove background AI |
+| `@google/generative-ai` | ^0.24.1 | Google Gemini AI |
+| `form-data` | ^4.0.5 | Multipart form data |
+| `yt-search` | ^2.13.1 | YouTube search |
 
 ### Configure `.env`
 
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
 ```env
-# -- AI (Optional) ----------------------------
-HF_TOKEN=
+# -- Wajib --
+CHANNEL_ID=                # ID channel WhatsApp untuk .upch
+                           # Contoh: 120363425402680588@newsletter
 
-GROQ_API_KEY=
+# -- AI (Opsional) ------------------------
+GROQ_API_KEY=              # Untuk .groq — dapatkan di https://console.groq.com/keys
 ```
 
-> **Note:** `.hf` dan `.groq` bersifat opsional. Jika tidak ada API key, fitur tersebut tidak bisa digunakan, namun bot tetap berjalan normal untuk fitur lainnya.
+> **Note:** Tanpa API key, fitur AI tidak bisa digunakan, tapi bot tetap berjalan normal.
 
 ### Configure Owner Number
 
@@ -105,18 +115,72 @@ npm run dev
 
 ---
 
+## Academic Features
+
+Bot mencari paper dari **Google Scholar** (via Puppeteer stealth). Jika Google Scholar terblokir, fallback ke **Zenodo API**. PDF didownload langsung dari sumber asli (publisher, Zenodo, dll) tanpa generate ulang.
+
+### `.jurnal [judul]`
+
+Cari paper dari Google Scholar (fallback Zenodo). Ambil paper terbaik otomatis, download PDF langsung.
+
+```
+.jurnal Is Justified True Belief Knowledge?
+.jurnal FILSAFAT ILMU GEOGRAFI PEMBANGUNAN WILAYAH
+```
+
+### `.paper [doi/url]`
+
+Lihat detail paper (abstrak, penulis, tahun, dll). Jika PDF tersedia, otomatis dikirim.
+
+```
+.paper 10.5281/zenodo.17919425
+```
+
+### `.getpdf [doi/url]`
+
+Download PDF dari DOI atau URL. Multi-layer fallback:
+
+1. **PDF URL dari hasil pencarian** (Google Scholar / Zenodo)
+2. **findPdf()** — CrossRef, OpenAlex, Semantic Scholar, Europe PMC, PubMed + Unpaywall
+3. **getPaper()** — semua sumber (CrossRef, OpenAlex, Semantic Scholar, Europe PMC, PubMed, arXiv, Zenodo, SciELO, DOAJ, BASE, CORE, HAL)
+4. **Direct URL** — jika input adalah URL langsung
+5. **Scrape HTML** — 12 regex patterns untuk ekstrak link PDF dari halaman publisher (Springer, Elsevier, IEEE, Taylor & Francis, Wiley, Zenodo, dll)
+
+```
+.getpdf 10.5281/zenodo.17919425
+.getpdf https://zenodo.org/records/17919425
+```
+
+### `.setgscookies`
+
+Google Scholar terkadang memblokir akses otomatis. Untuk menghindari limit, import cookies dari browser:
+
+1. Buka Google Scholar di Chrome
+2. Install ekstensi "Get cookies.txt" (Netscape format)
+3. Export cookies → kirim ke bot:
+```
+.setgscookies [paste cookies]
+```
+
+Cek status:
+```
+.setgscookies
+```
+
+---
+
 ## AI Features
 
 ### `.hf` -- Hugging Face
 
-Menggunakan Hugging Face Inference Providers API (`Qwen2.5-72B-Instruct` untuk teks, `Qwen3.6-35B-A3B` untuk gambar).
+Menggunakan Hugging Face Inference Providers API (`Qwen2.5-72B-Instruct` untuk teks).
 
 ```
 .hf apa itu black hole?
 .hf analisis gambar ini  (reply foto dengan caption)
 ```
 
-**Setup:** `HF_TOKEN=` di `.env` -- dapatkan di https://huggingface.co/settings/tokens
+**Setup:** `HF_TOKEN=` di `.env` — dapatkan di https://huggingface.co/settings/tokens
 
 ### `.groq` -- Groq LPU
 
@@ -130,9 +194,7 @@ Menggunakan Groq API dengan inference cepat (LPU). Default model: `llama-3.3-70b
 .groq apa ini? (reply foto)   -> tanya dengan gambar
 ```
 
-**Setup:** `GROQ_API_KEY=` di `.env` -- dapatkan gratis di https://console.groq.com/keys
-
-> Tip: Groq tidak perlu kartu kredit. Gratis 30 req/menit, 14.400 req/hari.
+**Setup:** `GROQ_API_KEY=` di `.env` — gratis di https://console.groq.com/keys
 
 ---
 
@@ -232,48 +294,43 @@ Grup yang tidak tergabung dalam komunitas akan menggunakan approval per-grup.
 
 ```
 epistemeus-bot/
-├── index.js                 # Entry point
+├── index.js                     # Entry point
+├── package.json
 ├── src/
-│   ├── config.js            # Config (owner, prefix, dll)
-│   ├── utils/
-│   │   ├── database.js      # Database JSON
-│   │   ├── handler.js       # Message handler (smsg)
-│   │   ├── logger.js        # Logger
-│   │   ├── huggingface.js   # Hugging Face API
-│   │   ├── groq.js          # Groq API
-│   │   ├── richmessage.js   # Rich message builder
-│   │   └── moderation.js    # Auto-moderation
-│   └── ...
+│   ├── config.js                # Config (owner, prefix, dll)
+│   └── utils/
+│       ├── database.js          # Database JSON
+│       ├── handler.js           # Message handler (smsg)
+│       ├── logger.js            # Logger
+│       ├── huggingface.js       # Hugging Face API
+│       ├── groq.js              # Groq API
+│       ├── richmessage.js       # Rich message builder
+│       └── moderation.js        # Auto-moderation
 ├── plugins/
-│   ├── index.js             # Command router
-│   ├── menu.js              # Main menu
-│   ├── ownermenu.js         # Owner menu
-│   ├── groupmenu.js         # Group menu
-│   ├── toolsmenu.js         # Tools menu
-│   ├── downloadmenu.js      # Download menu
-│   ├── hf.js                # .hf command
-│   ├── groq.js              # .groq command
-│   ├── approve.js           # .approve
-│   ├── approvedlist.js      # .approvedlist
-│   └── ...                  # 30+ commands
-├── scrape/                  # Scrapers
-│   ├── spotify.js
-│   ├── youtube.js
-│   ├── instagram.js
-│   └── ...
+│   ├── index.js                 # Command router
+│   ├── cekidch.js               # Chat identifier (.cekidch)
+│   ├── rvo.js                   # Reveal view-once (.rvo)
+│   ├── upch.js                  # Channel updater (.upch)
+│   ├── searchjurnal.js          # .jurnal, .paper, .getpdf
+│   ├── ... (30+ plugins)
+├── scrape/
+│   ├── googlescholar.js         # Google Scholar via Puppeteer
+│   ├── zenodo.js                # Zenodo API
+│   ├── unified.js               # 12 fallback sources
+│   ├── crossref.js, openalex.js, semantic.js, ...
+│   └── (scraper per platform)
 ├── media/
-│   └── menu.jpeg            # Default thumbnail
-├── tmp/                     # Temp files
-├── session/                 # Auth session (gitignored)
-├── .env                     # Environment (gitignored)
-└── database.json            # Database (gitignored)
+│   └── menu.jpeg                # Default thumbnail
+├── session/                     # Auth session (gitignored)
+├── .env                         # Environment (gitignored)
+└── database.json                # Database (gitignored)
 ```
 
 ---
 
 ## Configuration
 
-Semua konfigurasi di `src/config.js`:
+Di `src/config.js`:
 
 | Variable | Default | Deskripsi |
 |----------|---------|-----------|
@@ -281,71 +338,5 @@ Semua konfigurasi di `src/config.js`:
 | `set.prefix` | `['.']` | Prefix commands |
 | `set.self` | `false` | Mode self/public |
 | `pair.no` | `'6283891882373'` | Nomor untuk pairing |
-
----
-
-## Academic Features
-
-Bot dapat mencari paper akademik dari **Google Scholar** (via Puppeteer stealth) dan **12 sumber lainnya** (CrossRef, PubMed, arXiv, Semantic Scholar, Zenodo, dll).
-
-### `.jurnal [judul]`
-
-Cari paper berdasarkan judul, ambil paper terbaik, langsung download PDF-nya.
-
-```
-.jurnal Is Justified True Belief Knowledge?
-.jurnal machine learning in healthcare
-```
-
-### `.paper [doi/url]`
-
-Lihat detail paper (abstrak, penulis, tahun, dll).
-
-```
-.paper 10.1038/s41586-023-06221-2
-```
-
-### `.getpdf [doi/url]`
-
-Download PDF dari DOI atau URL. Mencoba:
-1. PDF langsung dari Google Scholar (jika tersedia di hasil pencarian)
-2. Direct PDF dari publisher
-3. Sci-Hub
-4. Scrape konten + generate PDF via Python (fallback)
-
-```
-.getpdf 10.1038/s41586-023-06221-2
-```
-
-### Google Scholar Cookies
-
-Google Scholar terkadang memblokir akses otomatis. Untuk menghindari limit, import cookies dari browser:
-
-1. Buka Google Scholar di Chrome
-2. Install ekstensi seperti "Get cookies.txt" (Netscape format)
-3. Export cookies → kirim file ke bot
-4. Atau kirim langsung teks cookies:
-
-```
-.setgscookies [paste cookies]
-```
-
-Cek status cookies:
-
-```
-.setgscookies
-```
-
----
-
-## Dependencies
-
-| Package | Kegunaan |
-|---------|----------|
-| `puppeteer-core` | Browser automation untuk Google Scholar |
-| `puppeteer-extra` | Stealth plugin untuk bypass deteksi bot |
-| `cheerio` | HTML parsing untuk scraping |
-| `axios` | HTTP client |
-| `fpdf2` (Python) | PDF generation fallback |
 
 

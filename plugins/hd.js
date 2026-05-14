@@ -8,9 +8,7 @@ async function downloadMsg(message, messageType) {
     return buffer
 }
 
-export default async (clients, m, { isOwner, prefix }) => {
-    if (!isOwner) return
-
+export default async (clients, m, { prefix }) => {
     let isQuoted = !!m.quoted
     let mediaType = isQuoted ? m.quoted.mtype : m.mtype
 

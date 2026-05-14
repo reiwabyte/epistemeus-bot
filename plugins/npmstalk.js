@@ -1,8 +1,6 @@
 import { npmstalk } from '../scrape/npmstalk.js'
 
-export default async (clients, m, { isOwner, prefix }) => {
-    if (!isOwner) return
-
+export default async (clients, m, { prefix }) => {
     let input = m.body.slice(m.body.indexOf(' ') + 1).trim()
     if (!input) return m.reply('Gunakan: ' + prefix + 'npmstalk [nama package]')
 

@@ -1,54 +1,180 @@
-import fs from 'fs'
 import axios from 'axios'
-import { spotifyDl, spotifyDlByName } from '../scrape/spotify.js'
+import crypto from 'crypto'
+import { load } from 'cheerio'
+import yts from 'yt-search'
 
-function getThumb() {
-    try { return fs.readFileSync('media/menu.jpeg') } catch { return undefined }
+const ky = 'C5D58EF67A7584E4A29F6C35BBC4EB12'
+const api = axios.create({
+  headers: {
+    'content-type': 'application/json',
+    origin: 'https://yt.savetube.me',
+    'user-agent': 'Mozilla/5.0 (Android 15; Mobile; SM-F958; rv:130.0) Gecko/130.0 Firefox/130.0'
+  }
+})
+
+function decrypt(enc) {
+  if (typeof enc !== 'string') throw new Error('Invalid response')
+  const sr = Buffer.from(enc, 'base64')
+  const key = Buffer.from(ky, 'hex')
+  const iv = sr.slice(0, 16)
+  const dt = sr.slice(16)
+  const dc = crypto.createDecipheriv('aes-128-cbc', key, iv)
+  return JSON.parse(Buffer.concat([dc.update(dt), dc.final()]).toString())
 }
 
-async function getThumbnail(url) {
-    if (url) {
-        try {
-            const { data } = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 })
-            return Buffer.from(data)
-        } catch {}
+async function getCdn() {
+  const res = await api.get('https://media.savetube.vip/api/random-cdn')
+  return res.data?.cdn || null
+}
+
+async function downloadYouTubeAudio(videoId) {
+  const cdn = await getCdn()
+  if (!cdn) throw new Error('No CDN available')
+
+  const { data: info } = await api.post(`https://${cdn}/v2/info`, {
+    url: `https://www.youtube.com/watch?v=${videoId}`
+  })
+  if (!info.data) throw new Error(info.message || 'Failed to get video info')
+
+  const dec = decrypt(info.data)
+
+  const { data: dl } = await api.post(`https://${cdn}/download`, {
+    id: videoId,
+    downloadType: 'audio',
+    quality: '128',
+    key: dec.key
+  })
+
+  const dlUrl = dl.data?.downloadUrl
+  if (!dlUrl) throw new Error('No download URL received')
+
+  const { data: mediaData } = await axios.get(dlUrl, {
+    responseType: 'arraybuffer',
+    timeout: 120000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      Referer: 'https://yt.savetube.me/'
     }
-    return getThumb()
+  })
+
+  return { buffer: Buffer.from(mediaData), title: dec.title }
 }
 
-export default async (clients, m, { isOwner, prefix }) => {
-    if (!isOwner) return
+function extractTrackId(text) {
+  if (!text) return null
+  if (/^[a-zA-Z0-9]{22}$/.test(text)) return text
+  const m = String(text).match(/track\/([a-zA-Z0-9]{22})/)
+  return m ? m[1] : null
+}
 
-    let input = m.body.slice(m.body.indexOf(' ') + 1).trim()
-    if (!input) return m.reply('Gunakan: ' + prefix + 'spotify [url | judul lagu]')
+function extractPlaylistId(text) {
+  if (!text) return null
+  const m = String(text).match(/playlist\/([a-zA-Z0-9]{22})/)
+  return m ? m[1] : null
+}
+
+async function getTrackMeta(trackId) {
+  const { data } = await axios.get(`https://open.spotify.com/track/${trackId}`, {
+    headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    timeout: 10000
+  })
+  const $ = load(data)
+  const title = $('meta[property="og:title"]').attr('content') || 'Unknown Track'
+  const artist = $('meta[name="music:musician_description"]').attr('content') || ''
+  const thumb = $('meta[property="og:image"]').attr('content') || ''
+  return { title, artist, thumb }
+}
+
+function extractPlaylistTracks(data) {
+  const uris = [...new Set((data.match(/spotify:track:([a-zA-Z0-9]{22})/g) || []).map(s => s.split(':')[2]))]
+  const titles = []
+  const seen = new Set()
+  const regex = /"title":"([^"]+)"/g
+  let m
+  while ((m = regex.exec(data)) !== null) {
+    if (!seen.has(m[1])) { seen.add(m[1]); titles.push(m[1]); }
+  }
+  const trackTitles = titles.slice(1).filter(t => t !== titles[0])
+  return uris.slice(0, 30).map((id, i) => ({ id, title: trackTitles[i] || 'Unknown Track' }))
+}
+
+const playlistCache = new Map()
+
+export default async (clients, m, { prefix, cmd }) => {
+  const input = m.body.slice(prefix.length + cmd.length).trim() || (m.quoted?.text || '')
+  const trackId = extractTrackId(input)
+  const playlistId = extractPlaylistId(input)
+  const cacheKey = 'spotify_' + m.chat
+
+  if (!trackId && !playlistId) {
+    if (/^\d+$/.test(input.trim())) {
+      const cached = playlistCache.get(cacheKey)
+      if (!cached || Date.now() - cached.time > 300000) return m.reply('Playlist expired. Kirim URL lagi.')
+      const num = parseInt(input.trim())
+      const track = cached.tracks[num - 1]
+      if (!track) return m.reply('Angka tidak valid. Pilih 1-' + cached.tracks.length)
+      try {
+        const meta = await getTrackMeta(track.id)
+        await playTrack(clients, m, track.id, meta.title, meta.artist, meta.thumb)
+      } catch (e) {
+        console.error('spotify num error:', e)
+        m.reply('Error: ' + e.message)
+      }
+      return
+    }
+    return m.reply(`Gunakan: ${prefix}${cmd} [url track|url playlist|id track]`)
+  }
+
+  try {
+    if (playlistId) {
+      const { data } = await axios.get(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+        headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        timeout: 10000
+      })
+      const tracks = extractPlaylistTracks(data)
+      if (!tracks.length) return m.reply('Tidak ada track di playlist')
+
+      playlistCache.set(cacheKey, { tracks, time: Date.now() })
+
+      const lines = tracks.slice(0, 30).map((t, i) => `${i + 1}. ${t.title}`)
+      const text = '*Spotify Playlist*\n' + lines.join('\n') + '\n\n_Kirim_ `.spotify <angka>` _untuk play_'
+      await clients.sendMessage(m.chat, { text }, { quoted: m })
+      return
+    }
 
     await m.react('⏳')
-    try {
-        let isUrl = /spotify\.com\/track\//i.test(input) || /^[a-zA-Z0-9]{22}$/.test(input)
-        let res = isUrl ? await spotifyDl(input) : await spotifyDlByName(input)
+    const meta = await getTrackMeta(trackId)
+    await playTrack(clients, m, trackId, meta.title, meta.artist, meta.thumb)
 
-        let teks = ''
-        teks += res.title + ' - ' + res.artist + '\n'
-        teks += 'Durasi: ' + res.duration
+  } catch (e) {
+    await m.react('❌')
+    m.reply('Error: ' + e.message)
+  }
+}
 
-        await clients.sendMessage(m.chat, {
-            audio: res.audioBuffer,
-            mimetype: 'audio/mpeg',
-            ptt: false,
-            contextInfo: {
-                externalAdReply: {
-                    title: res.title,
-                    body: res.artist,
-                    thumbnail: await getThumbnail(res.thumbnail),
-                    mediaType: 1,
-                    showAdAttribution: false
-                }
-            }
-        }, { quoted: m })
+async function playTrack(clients, m, trackId, title, artist, thumb) {
+  const searchQuery = `${title} ${artist}`.trim()
+  await m.reply(`*Searching:* ${title}${artist ? ' - ' + artist : ''}`)
 
-        await m.react('✅')
-    } catch (e) {
-        await m.react('❌')
-        m.reply('Gagal: ' + (e.message || 'Error'))
+  const search = await yts(searchQuery + ' song')
+  const video = search.videos?.[0]
+  if (!video) throw new Error('No YouTube match found for: ' + title)
+
+  const { buffer } = await downloadYouTubeAudio(video.videoId)
+
+  await clients.sendMessage(m.chat, {
+    audio: buffer,
+    mimetype: 'audio/mpeg',
+    ptt: false,
+    contextInfo: {
+      externalAdReply: {
+        title: title,
+        body: artist || 'Spotify',
+        mediaType: 2,
+        thumbnailUrl: thumb
+      }
     }
+  }, { quoted: m })
+
+  await m.react('✅')
 }

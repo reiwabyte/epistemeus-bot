@@ -1,0 +1,2 @@
+# Python dependencies (optional)
+# fpdf2 dulu dipake buat generate PDF — skrg udah dihapus

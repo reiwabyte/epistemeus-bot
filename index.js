@@ -160,9 +160,17 @@ async function start() {
                 return
             }
 
-            let opening = `Halo! Sebelumnya kami mengucapkan terimakasih telah meminta bergabung ke grup ${groupName}.
+            let isCustomMode = groupData?.mode === 2 && groupData?.questions?.length
+            let isRegistered = db.history?.some(h => h.number === userNum)
 
-Kami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lalu ketik *lanjutkan* untuk memulai.`
+            let opening
+            if (isCustomMode && isRegistered) {
+                opening = `Halo! Kamu sudah terdaftar di database kami, namun belum tergabung di grup *${groupName}*.\n\nMohon isi pertanyaan berikut untuk verifikasi. Ketik *lanjutkan* untuk memulai.`
+            } else if (isCustomMode) {
+                opening = `Halo! Untuk bergabung ke grup *${groupName}*, mohon isi pertanyaan berikut.\n\nKetik *lanjutkan* untuk memulai.`
+            } else {
+                opening = `Halo! Sebelumnya kami mengucapkan terimakasih telah meminta bergabung ke grup ${groupName}.\n\nKami perlu melakukan proses perkenalan singkat. Silakan baca dengan saksama, lalu ketik *lanjutkan* untuk memulai.`
+            }
 
             await clients.sendMessage(userJid, { text: opening })
             logger.info(`Opening sent to ${userJid} for group ${groupJid}`)
