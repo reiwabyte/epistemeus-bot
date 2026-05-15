@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node --expose-gc index.js",
         "dev": "node --watch index.js",
-        "postinstall": "pip install -r requirements.txt -q"
+        "postinstall": "echo 'done'"
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
