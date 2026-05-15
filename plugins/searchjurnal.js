@@ -321,6 +321,22 @@ async function tryPdfUrl(clients, m, url, id) {
   return false
 }
 
+async function resolveZenodoPdf(cleanId) {
+  const match = cleanId.match(/^10\.5281\/zenodo\.(\d+)/)
+  if (!match) return null
+  try {
+    const { data } = await axios.get(`https://zenodo.org/api/records/${match[1]}`, { timeout: 10000 })
+    const files = data.files || []
+    const pdf = files.find(f => f.type === 'pdf' || f.key?.endsWith('.pdf') || f.mimetype === 'application/pdf')
+    if (pdf?.links?.download) return pdf.links.download
+    if (pdf?.key) return `https://zenodo.org/records/${match[1]}/files/${encodeURIComponent(pdf.key)}?download=1`
+    for (const f of files) {
+      if (f.links?.download) return f.links.download
+    }
+  } catch {}
+  return `https://zenodo.org/records/${match[1]}/files/article.pdf?download=1`
+}
+
 export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
   const raw = body.slice(prefix.length + cmd.length).trim()
   if (!raw) return m.reply(`Gunakan: ${prefix}getpdf [doi/url]`)
@@ -329,21 +345,38 @@ export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
 
   await m.react('⏳')
 
-  if (paperInfo?.pdfUrl && await tryPdfUrl(clients, m, paperInfo.pdfUrl, id)) return await m.react('✅')
+  let candidates = []
+  if (paperInfo?.pdfUrl) candidates.push(paperInfo.pdfUrl)
 
-  const pdfUrl = await findPdf(id).catch(() => null)
-  const doiFallback = `https://doi.org/${cleanId}`
-  if (pdfUrl && pdfUrl !== doiFallback && !pdfUrl.includes('sci-hub')) {
-    if (await tryPdfUrl(clients, m, pdfUrl, id)) return await m.react('✅')
+  const arxivId = cleanId.replace(/^arxiv\.org\/(abs|pdf)\//, '').replace('.pdf', '')
+  if (/^\d{4}\.\d{4,5}(v\d+)?$/.test(arxivId)) candidates.push(`https://arxiv.org/pdf/${arxivId}.pdf`)
+
+  if (/^10\.5281\/zenodo\./.test(cleanId)) {
+    const zurl = await resolveZenodoPdf(cleanId)
+    if (zurl) candidates.push(zurl)
+  }
+
+  try {
+    const fp = await findPdf(id)
+    if (fp && !fp.includes('sci-hub') && !fp.includes('doi.org/')) candidates.push(fp)
+  } catch {}
+
+  const seen = new Set()
+  for (const url of candidates) {
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    if (await tryPdfUrl(clients, m, url, id)) return await m.react('✅')
   }
 
   const extraInfo = await getPaper(id).catch(() => null)
-  if (extraInfo?.pdfUrl && extraInfo.pdfUrl !== pdfUrl && await tryPdfUrl(clients, m, extraInfo.pdfUrl, id)) return await m.react('✅')
+  if (extraInfo?.pdfUrl && !seen.has(extraInfo.pdfUrl)) {
+    if (await tryPdfUrl(clients, m, extraInfo.pdfUrl, id)) return await m.react('✅')
+  }
 
   if (id.startsWith('http') && !id.includes('doi.org/')) {
-    if (await tryPdfUrl(clients, m, id, id)) return await m.react('✅')
+    if (!seen.has(id) && await tryPdfUrl(clients, m, id, id)) return await m.react('✅')
   }
 
   await m.react('⚠️')
-  await m.reply(`PDF tidak tersedia. Buka:\nhttps://doi.org/${cleanId}`)
+  await m.reply(`PDF tidak tersedia. Buka:\n${cleanId.startsWith('http') ? cleanId : 'https://doi.org/' + cleanId}`)
 }
