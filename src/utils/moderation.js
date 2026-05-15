@@ -1,43 +1,20 @@
 const VULGAR = [
     'anjing', 'anjink', 'anjg', 'ajig', 'ajg', 'anying', 'anjay',
     'bangsat', 'bangsad', 'bangset',
-    'bajingan',
-    'brengsek', 'berengsek',
     'kontol', 'kntl', 'kont0l', 'kondol',
     'memek', 'mmek', 'memed',
     'ngentot', 'ngent0t', 'ntot', 'entot', 'gentot',
-    'goblok', 'gblk', 'goblog', 'g0bl0k',
-    'tolol', 't0l0l', 'tol0l',
     'jancuk', 'jancok', 'jncok', 'cuk', 'janc0k',
     'asu', 'asuu', 'asoe', 'as0',
     'tai', 'taek', 't4i',
-    'keparat',
-    'laknat', 'laknatullah',
-    'setan', 's3tan', 'set4n',
-    'iblis',
-    'babi', 'b4bi',
-    'cocot', 'congor',
-    'dajjal',
-    'haram',
-    'jahanam',
-    'kafir',
-    'munafik',
-    'najis',
-    'neraka',
     'pantat', 'pant4t',
     'pepek', 'p3p3k',
     'peler', 'p3l3r',
     'pukimak', 'pukima', 'puki', 'pukim4k',
-    'bacot', 'bac0t',
-    'h0m0', 'homo',
-    'jablay',
     'lonte', 'pelacur', 'l0nte',
-    'mesum',
-    'perek',
     'sundal', 'sund4l',
     'tempek', 'temp3k',
     'jembut',
-    'budrek',
     'kenthu', 'kentu',
     'ndasmu',
 ]
@@ -157,10 +134,10 @@ export function checkSpamDuplicate(userNum, text) {
 
 export function checkRapidFire(userNum) {
     let hist = userMessageHistory.get(userNum)
-    if (!hist || hist.length < 4) return false
-    let recent = hist.slice(-4)
+    if (!hist || hist.length < 6) return false
+    let recent = hist.slice(-6)
     let timeWindow = recent[recent.length - 1].time - recent[0].time
-    return timeWindow < 4000
+    return timeWindow < 3000
 }
 
 function normalizeText(text) {
@@ -169,14 +146,12 @@ function normalizeText(text) {
 
 function checkVulgar(text) {
     let lower = text.toLowerCase()
-    let cleaned = lower.replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim()
-    let tokens = cleaned.split(' ')
+    let cleaned = lower.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+    let tokens = cleaned.split(/\s+/)
     for (let word of VULGAR) {
         let base = word.toLowerCase()
-        if (tokens.some(t => t === base || t.startsWith(base) || t.endsWith(base))) return true
-        let escaped = base.replace(/[0-9]/g, '[0-9a-z]')
-        let regex = new RegExp('\\b' + escaped + '\\b', 'i')
-        if (regex.test(lower)) return true
+        if (tokens.some(t => t === base)) return true
+        if (tokens.some(t => t.replace(/[0-9]/g, '') === base)) return true
     }
     return false
 }
@@ -221,13 +196,10 @@ function checkFallacy(text) {
 
 function checkSpam(text) {
     let lower = text
-    if (/(.)\1{8,}/.test(lower)) return true
-    if (/([A-Za-z0-9])\1{10,}/.test(lower)) return true
+    if (/([A-Za-z0-9])\1{15,}/.test(lower)) return true
     if (/\b(?:grub|gup|grop|grp|grup|group)\s*(?:wa|whatsapp|telegram|line|discord)\b/i.test(lower)) return true
-    if (/^[A-Z\s]{15,}$/.test(lower)) return true
-    if (/(?:https?:\/\/)?\S+\.(?:com|xyz|top|club|site|info|online|fun|link|id|cf|ml|gq|tk)\/\S+/i.test(lower) && !text.includes(' ')) return true
-    if ((text.match(/#/g) || []).length > 5) return true
-    if ((text.match(/[\u{1F000}-\u{1FFFF}]/gu) || []).length > 10) return true
+    if ((text.match(/#/g) || []).length > 10) return true
+    if ((text.match(/[\u{1F000}-\u{1FFFF}]/gu) || []).length > 20) return true
     return false
 }
 
