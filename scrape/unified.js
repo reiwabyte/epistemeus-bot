@@ -108,8 +108,8 @@ export async function findPdf(doi) {
     }
   } catch {}
 
-  // First 5 fallback sources
-  for (const source of FALLBACK_SOURCES.slice(0, 5)) {
+  // All fallback sources
+  for (const source of FALLBACK_SOURCES) {
     try {
       const paper = await source.get(cleanDoi)
       if (paper?.pdfUrl) candidates.push({ url: paper.pdfUrl, from: source.name })

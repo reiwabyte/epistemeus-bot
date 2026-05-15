@@ -271,13 +271,6 @@ export async function paper(clients, m, { prefix, cmd, body }) {
   }
 }
 
-const UA_LIST = [
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0',
-]
-
 async function tryDownloadPdf(url, retries = 3) {
   for (let i = 0; i <= retries; i++) {
     if (i > 0) await new Promise(r => setTimeout(r, i * 1500 + Math.random() * 1000))
@@ -285,7 +278,7 @@ async function tryDownloadPdf(url, retries = 3) {
       const res = await axios.get(url, {
         responseType: 'arraybuffer',
         timeout: 30000,
-        headers: { 'User-Agent': UA_LIST[i % UA_LIST.length] },
+        headers: { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' },
         maxRedirects: 5
       })
       const ct = res.headers['content-type'] || ''
@@ -301,44 +294,27 @@ async function tryDownloadPdf(url, retries = 3) {
   return null
 }
 
-async function scrapePdfFromHtml(pageUrl) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise(r => setTimeout(r, attempt * 2000 + Math.random() * 1000))
-    try {
-      const html = (await axios.get(pageUrl, {
-        timeout: 15000,
-        headers: { 'User-Agent': UA_LIST[attempt % UA_LIST.length] }
-      })).data
-
-      const patterns = [
-        /href=["']([^"']*\.pdf[^"']*)["']/ig,
-        /href=["']([^"']*(?:download|pdf)[^"']*)["'][^>]*>.*?(?:pdf|download)/igs,
-        /(?:download|pdf).*?href=["']([^"']*)["']/ig,
-        /<a[^>]*class=["'][^"']*pdf[^"']*["'][^>]*href=["']([^"']*)["']/ig,
-        /href=["']([^"']*\/pdf\/[^"']*)["']/ig,
-        /href=["']([^"']*pdf(?:direct|download|fulltext)[^"']*)["']/ig,
-        /(?:data-href|data-url|data-file)=["']([^"']*\.pdf[^"']*)["']/ig,
-        /<iframe[^>]+src=["']([^"']*\.pdf[^"']*)["']/ig,
-        /<embed[^>]+src=["']([^"']*\.pdf[^"']*)["']/ig,
-        /<meta[^>]+name=["']citation_pdf_url["'][^>]+content=["']([^"']*)["']/ig,
-        /<meta[^>]+content=["']([^"']*\.pdf[^"']*)["'][^>]+name=["']citation_pdf_url["']/ig,
-        /<link[^>]+rel=["'](?:alternate|item)[^"']*["'][^>]+type=["']application\/pdf["'][^>]+href=["']([^"']*)["']/ig,
-      ]
-
-      for (const pat of patterns) {
-        const all = [...html.matchAll(pat)]
-        for (const m of all) {
-          let found = m[1].trim()
-          if (found.startsWith('//')) found = 'https:' + found
-          else if (found.startsWith('/')) found = new URL(found, pageUrl).href
-          else if (!found.startsWith('http')) found = new URL(found, pageUrl).href
-          const result = await tryDownloadPdf(found)
-          if (result) return result
-        }
-      }
-    } catch {}
+async function sendPdf(clients, m, buffer, id) {
+  if (!buffer) return false
+  const fileName = `paper_${id.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+  try {
+    await clients.sendMessage(m.chat, {
+      document: buffer,
+      mimetype: 'application/pdf',
+      fileName
+    }, { quoted: m })
+    return true
+  } catch {
+    return false
   }
-  return null
+}
+
+async function tryPdfUrl(clients, m, url, id) {
+  if (!url || url.includes('sci-hub')) return false
+  if (await sendPdf(clients, m, { url }, id)) return true
+  const buf = await tryDownloadPdf(url)
+  if (buf && await sendPdf(clients, m, Buffer.from(buf.data), id)) return true
+  return false
 }
 
 export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
@@ -349,91 +325,19 @@ export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
 
   await m.react('⏳')
 
-  async function isValidPdf(buf) {
-    if (!buf) return false
-    if (Buffer.isBuffer(buf)) return buf.slice(0, 5).toString() === '%PDF-'
-    try { return Buffer.from(buf).slice(0, 5).toString() === '%PDF-' } catch { return false }
-  }
-
-  async function sendPdf(buffer) {
-    const isUrl = buffer && typeof buffer === 'object' && buffer.url
-    if (!isUrl && !isValidPdf(buffer.data || buffer)) return false
-    const fileName = `paper_${id.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
-    try {
-      await clients.sendMessage(m.chat, {
-        document: buffer,
-        mimetype: 'application/pdf',
-        fileName
-      }, { quoted: m })
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  const fromZenodo = paperInfo?.source === 'Zenodo' || paperInfo?.pdfUrl?.includes('zenodo.org')
-
-  // Coba PDF URL dari hasil pencarian (Google Scholar / Zenodo dll)
-  if (paperInfo?.pdfUrl && !paperInfo.pdfUrl.includes('sci-hub')) {
-    if (await sendPdf({ url: paperInfo.pdfUrl })) return await m.react('✅')
-    const buf = await tryDownloadPdf(paperInfo.pdfUrl)
-    if (buf && await sendPdf(Buffer.from(buf.data))) return await m.react('✅')
-    if (fromZenodo) {
-      // PDF dari Zenodo gagal, skip getPaper/Zenodo API (bakal kena rate limit juga)
-      // langsung coba HTML scrape sebagai usaha terakhir
-      const zid = cleanId.match(/^10\.5281\/zenodo\.(\d+)/)?.[1]
-      if (zid) {
-        const result = await scrapePdfFromHtml(`https://zenodo.org/records/${zid}`)
-        if (result) {
-          const toSend = result.data ? Buffer.from(result.data) : result
-          if (await sendPdf(toSend)) return await m.react('✅')
-        }
-      }
-      await m.react('⚠️')
-      return m.reply(`PDF tidak tersedia. Buka:\nhttps://doi.org/${cleanId}`)
-    }
-  }
+  if (paperInfo?.pdfUrl && await tryPdfUrl(clients, m, paperInfo.pdfUrl, id)) return await m.react('✅')
 
   const pdfUrl = await findPdf(id).catch(() => null)
   const doiFallback = `https://doi.org/${cleanId}`
-  const hasDirectUrl = pdfUrl && pdfUrl !== doiFallback && !pdfUrl.includes('sci-hub')
-
-  if (hasDirectUrl) {
-    if (await sendPdf({ url: pdfUrl })) return await m.react('✅')
-    const buf = await tryDownloadPdf(pdfUrl)
-    if (buf && await sendPdf(Buffer.from(buf.data))) return await m.react('✅')
+  if (pdfUrl && pdfUrl !== doiFallback && !pdfUrl.includes('sci-hub')) {
+    if (await tryPdfUrl(clients, m, pdfUrl, id)) return await m.react('✅')
   }
 
   const extraInfo = await getPaper(id).catch(() => null)
-  const extraPdfUrl = extraInfo?.pdfUrl || null
+  if (extraInfo?.pdfUrl && extraInfo.pdfUrl !== pdfUrl && await tryPdfUrl(clients, m, extraInfo.pdfUrl, id)) return await m.react('✅')
 
-  if (extraPdfUrl && extraPdfUrl !== pdfUrl && !extraPdfUrl.includes('sci-hub')) {
-    if (await sendPdf({ url: extraPdfUrl })) return await m.react('✅')
-    const buf = await tryDownloadPdf(extraPdfUrl)
-    if (buf && await sendPdf(Buffer.from(buf.data))) return await m.react('✅')
-  }
-
-  const isUrl = id.startsWith('http') && !id.includes('doi.org/')
-  if (isUrl || raw.startsWith('http')) {
-    const url = isUrl ? id : raw
-    if (await sendPdf({ url })) return await m.react('✅')
-    const buf = await tryDownloadPdf(url)
-    if (buf && await sendPdf(Buffer.from(buf.data))) return await m.react('✅')
-  }
-
-  // Cari link PDF dari halaman web (tanpa scrape konten artikel)
-  const zenodoRecord = cleanId.match(/^10\.5281\/zenodo\.(\d+)/)
-  const urlsToTry = [
-    `https://doi.org/${cleanId}`,
-    zenodoRecord ? `https://zenodo.org/records/${zenodoRecord[1]}` : null,
-  ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i)
-
-  for (const url of urlsToTry) {
-    const result = await scrapePdfFromHtml(url)
-    if (result) {
-      const toSend = result.data ? Buffer.from(result.data) : result
-      if (await sendPdf(toSend)) return await m.react('✅')
-    }
+  if (id.startsWith('http') && !id.includes('doi.org/')) {
+    if (await tryPdfUrl(clients, m, id, id)) return await m.react('✅')
   }
 
   await m.react('⚠️')
