@@ -321,20 +321,37 @@ async function tryPdfUrl(clients, m, url, id) {
   return false
 }
 
-async function resolveZenodoPdf(cleanId) {
-  const match = cleanId.match(/^10\.5281\/zenodo\.(\d+)/)
-  if (!match) return null
-  try {
-    const { data } = await axios.get(`https://zenodo.org/api/records/${match[1]}`, { timeout: 10000 })
-    const files = data.files || []
-    const pdf = files.find(f => f.type === 'pdf' || f.key?.endsWith('.pdf') || f.mimetype === 'application/pdf')
-    if (pdf?.links?.download) return pdf.links.download
-    if (pdf?.key) return `https://zenodo.org/records/${match[1]}/files/${encodeURIComponent(pdf.key)}?download=1`
-    for (const f of files) {
-      if (f.links?.download) return f.links.download
+const PDF_PATTERNS = [
+  { match: /^10\.5281\/zenodo\.(\d+)/, resolve: async (m) => {
+    try {
+      const { data } = await axios.get(`https://zenodo.org/api/records/${m[1]}`, { timeout: 10000 })
+      const files = data.files || []
+      for (const f of files) {
+        if (f.links?.download) return f.links.download
+        if ((f.type === 'pdf' || f.key?.endsWith('.pdf')) && f.key)
+          return `https://zenodo.org/records/${m[1]}/files/${encodeURIComponent(f.key)}?download=1`
+      }
+    } catch {}
+    return null
+  }},
+  { match: /^10\.1101\//, build: (_, d) => `https://www.biorxiv.org/content/${d}.full.pdf` },
+  { match: /^10\.1371\/journal\.pone\./, build: (_, d) => `https://journals.plos.org/plosone/article/file?id=${d}&type=printable` },
+  { match: /^10\.1371\/journal\.pmed\./, build: (_, d) => `https://journals.plos.org/plosmedicine/article/file?id=${d}&type=printable` },
+  { match: /^10\.1155\//, build: (_, d) => `https://downloads.hindawi.com/journals/${d.split('/').slice(0,-1).join('/')}/articles/${d.split('/').pop()}.pdf` },
+  { match: /^10\.3390\//, build: (_, d) => `https://mdpi-res.com/${d.replace(/^10\./, 'd_')}.pdf` },
+]
+
+async function resolvePattern(cleanId) {
+  for (const p of PDF_PATTERNS) {
+    const m = cleanId.match(p.match)
+    if (!m) continue
+    if (p.resolve) {
+      const r = await p.resolve(m)
+      if (r) return r
     }
-  } catch {}
-  return `https://zenodo.org/records/${match[1]}/files/article.pdf?download=1`
+    if (p.build) return p.build(m, cleanId)
+  }
+  return null
 }
 
 export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
@@ -351,10 +368,8 @@ export async function getpdf(clients, m, { prefix, cmd, body, paperInfo }) {
   const arxivId = cleanId.replace(/^arxiv\.org\/(abs|pdf)\//, '').replace('.pdf', '')
   if (/^\d{4}\.\d{4,5}(v\d+)?$/.test(arxivId)) candidates.push(`https://arxiv.org/pdf/${arxivId}.pdf`)
 
-  if (/^10\.5281\/zenodo\./.test(cleanId)) {
-    const zurl = await resolveZenodoPdf(cleanId)
-    if (zurl) candidates.push(zurl)
-  }
+  const patternUrl = await resolvePattern(cleanId)
+  if (patternUrl) candidates.push(patternUrl)
 
   try {
     const fp = await findPdf(id)
