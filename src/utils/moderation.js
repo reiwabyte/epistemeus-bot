@@ -134,10 +134,10 @@ export function checkSpamDuplicate(userNum, text) {
 
 export function checkRapidFire(userNum) {
     let hist = userMessageHistory.get(userNum)
-    if (!hist || hist.length < 6) return false
-    let recent = hist.slice(-6)
+    if (!hist || hist.length < 5) return false
+    let recent = hist.slice(-5)
     let timeWindow = recent[recent.length - 1].time - recent[0].time
-    return timeWindow < 3000
+    return timeWindow < 1000
 }
 
 function normalizeText(text) {
