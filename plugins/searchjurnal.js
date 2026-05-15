@@ -152,6 +152,10 @@ export default async (clients, m, { prefix, cmd, body }) => {
   let info = `📄 *${best.title}*\n`
   info += `✍️ *Penulis:* ${authorText}\n`
   if (best.year) info += `📅 *Tahun:* ${best.year}\n`
+  if (best.abstract) {
+    const abs = best.abstract.length > 400 ? best.abstract.slice(0, 400) + '...' : best.abstract
+    info += `📝 *Abstrak:*\n${abs}\n`
+  }
   info += `🔗 ${best.url}`
 
   if (bestId) {
