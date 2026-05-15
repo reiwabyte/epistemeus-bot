@@ -1,7 +1,33 @@
 import { getPaper, findPdf } from '../scrape/unified.js'
 import { searchAll as searchGS } from '../scrape/googlescholar.js'
+import { searchCrossRef } from '../scrape/crossref.js'
+import { searchOpenAlex } from '../scrape/openalex.js'
+import { searchArxiv } from '../scrape/arxiv.js'
+import { searchDoaj } from '../scrape/doaj.js'
+import { searchSemantic } from '../scrape/semantic.js'
+import { searchPubmed } from '../scrape/pubmed.js'
 import { searchZenodo } from '../scrape/zenodo.js'
+import { searchBase } from '../scrape/base.js'
+import { searchCore } from '../scrape/core.js'
+import { searchHal } from '../scrape/hal.js'
+import { searchEuropePMC } from '../scrape/europepmc.js'
+import { searchScielo } from '../scrape/scielo.js'
 import axios from 'axios'
+
+const NON_GS_SOURCES = [
+  { name: 'CrossRef', search: searchCrossRef },
+  { name: 'OpenAlex', search: searchOpenAlex },
+  { name: 'Semantic Scholar', search: searchSemantic },
+  { name: 'Europe PMC', search: searchEuropePMC },
+  { name: 'PubMed', search: searchPubmed },
+  { name: 'arXiv', search: searchArxiv },
+  { name: 'Zenodo', search: searchZenodo },
+  { name: 'SciELO', search: searchScielo },
+  { name: 'DOAJ', search: searchDoaj },
+  { name: 'BASE', search: searchBase },
+  { name: 'CORE', search: searchCore },
+  { name: 'HAL', search: searchHal }
+]
 
 export default async (clients, m, { prefix, cmd, body }) => {
   let query = body.slice(prefix.length + cmd.length).trim()
@@ -9,37 +35,39 @@ export default async (clients, m, { prefix, cmd, body }) => {
 
   await m.react('⏳')
 
-  // .searchjurnal: list 1-50 button list
-  // .jurnal: langsung cari berdasarkan judul
+  // .searchjurnal: pake scraper selain Google Scholar, list 1-50 button list
+  // .jurnal: pake Google Scholar, langsung cari berdasarkan judul + PDF
   const isListMode = cmd === 'searchjurnal'
-  const limit = isListMode ? 50 : 25
-
-  let papers
-  try {
-    papers = await searchGS(query, limit)
-  } catch (e) {
-    console.error('[GS] error:', e.message)
-    papers = []
-  }
-
-  let sourceLabel = 'Google Scholar'
-  if (!papers.length) {
-    try {
-      papers = await searchZenodo(query, limit)
-      sourceLabel = 'Zenodo'
-    } catch {}
-  }
-
-  if (!papers.length) {
-    await m.react('❌')
-    return m.reply('Tidak ada hasil untuk: ' + query)
-  }
-
-  await m.react('✅')
 
   if (isListMode) {
-    const maxShow = Math.min(papers.length, 50)
-    const shown = papers.slice(0, maxShow)
+    let allPapers = []
+    const seen = new Set()
+
+    for (const src of NON_GS_SOURCES) {
+      try {
+        const results = await src.search(query, 5)
+        for (const p of results) {
+          const key = p.doi || p.title?.toLowerCase().slice(0, 60)
+          if (key && !seen.has(key)) {
+            seen.add(key)
+            allPapers.push(p)
+          }
+        }
+      } catch (e) {
+        console.error(`[${src.name}] error:`, e.message)
+      }
+    }
+
+    if (!allPapers.length) {
+      await m.react('❌')
+      return m.reply('Tidak ada hasil untuk: ' + query)
+    }
+
+    await m.react('✅')
+
+    allPapers.sort((a, b) => (b.year || 0) - (a.year || 0))
+    const maxShow = Math.min(allPapers.length, 50)
+    const shown = allPapers.slice(0, maxShow)
     const rows = shown.map((p, i) => {
       const pa = Array.isArray(p.authors) ? p.authors : (p.authors ? String(p.authors).split(/[,;]/).map(s => s.trim()).filter(Boolean) : [])
       return {
@@ -52,13 +80,13 @@ export default async (clients, m, { prefix, cmd, body }) => {
     await clients.sendMessage(m.chat, {
       interactiveMessage: {
         title: `Hasil: ${query}`,
-        footer: `${shown.length} paper dari ${sourceLabel}`,
+        footer: `${shown.length} paper dari ${NON_GS_SOURCES.length} sumber`,
         buttons: [{
           name: 'single_select',
           buttonParamsJson: JSON.stringify({
             title: 'Pilih paper',
             sections: [{
-              title: `${sourceLabel} — ${papers.length} hasil`,
+              title: `${shown.length} hasil dari ${allPapers.length} ditemukan`,
               rows
             }]
           })
@@ -66,8 +94,8 @@ export default async (clients, m, { prefix, cmd, body }) => {
       },
       contextInfo: {
         externalAdReply: {
-          title: sourceLabel,
-          body: `${papers.length} hasil dari ${sourceLabel}`,
+          title: 'Academic Search',
+          body: `${allPapers.length} hasil dari ${NON_GS_SOURCES.length} sumber`,
           mediaType: 1,
           showAdAttribution: false,
           renderLargerThumbnail: false
@@ -76,6 +104,30 @@ export default async (clients, m, { prefix, cmd, body }) => {
     })
     return
   }
+
+  // .jurnal: Google Scholar + PDF
+  const limit = 25
+
+  let papers
+  try {
+    papers = await searchGS(query, limit)
+  } catch (e) {
+    console.error('[GS] error:', e.message)
+    papers = []
+  }
+
+  if (!papers.length) {
+    try {
+      papers = await searchZenodo(query, limit)
+    } catch {}
+  }
+
+  if (!papers.length) {
+    await m.react('❌')
+    return m.reply('Tidak ada hasil untuk: ' + query)
+  }
+
+  await m.react('✅')
 
   // .jurnal: cari paper terbaik berdasarkan judul
   const qlower = query.toLowerCase()
