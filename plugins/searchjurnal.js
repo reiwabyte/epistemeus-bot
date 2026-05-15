@@ -1,6 +1,6 @@
 import { getPaper, findPdf } from '../scrape/unified.js'
 import { searchAll as searchGS } from '../scrape/googlescholar.js'
-import { searchCrossRef } from '../scrape/crossref.js'
+import { searchPapers as searchCrossRef } from '../scrape/crossref.js'
 import { searchOpenAlex } from '../scrape/openalex.js'
 import { searchArxiv } from '../scrape/arxiv.js'
 import { searchDoaj } from '../scrape/doaj.js'
