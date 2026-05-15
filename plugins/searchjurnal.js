@@ -8,9 +8,15 @@ export default async (clients, m, { prefix, cmd, body }) => {
   if (!query) return m.reply(`Gunakan: ${prefix}jurnal [kata kunci]`)
 
   await m.react('⏳')
+
+  // .searchjurnal: list 1-50 button list
+  // .jurnal: langsung cari berdasarkan judul
+  const isListMode = cmd === 'searchjurnal'
+  const limit = isListMode ? 50 : 25
+
   let papers
   try {
-    papers = await searchGS(query, 25)
+    papers = await searchGS(query, limit)
   } catch (e) {
     console.error('[GS] error:', e.message)
     papers = []
@@ -19,7 +25,7 @@ export default async (clients, m, { prefix, cmd, body }) => {
   let sourceLabel = 'Google Scholar'
   if (!papers.length) {
     try {
-      papers = await searchZenodo(query, 25)
+      papers = await searchZenodo(query, limit)
       sourceLabel = 'Zenodo'
     } catch {}
   }
@@ -31,7 +37,47 @@ export default async (clients, m, { prefix, cmd, body }) => {
 
   await m.react('✅')
 
-  // Cari paper terbaik: prefer match dengan judul
+  if (isListMode) {
+    const maxShow = Math.min(papers.length, 50)
+    const shown = papers.slice(0, maxShow)
+    const rows = shown.map((p, i) => {
+      const pa = Array.isArray(p.authors) ? p.authors : (p.authors ? String(p.authors).split(/[,;]/).map(s => s.trim()).filter(Boolean) : [])
+      return {
+        title: `${i + 1}. ${(p.title || '').slice(0, 55)}${p.title?.length > 55 ? '...' : ''}`,
+        description: `[${p.source}] ${(pa[0] || '?')} (${p.year || '?'})${p.pdfUrl ? ' [PDF]' : ''}`,
+        id: `${prefix}paper ${p.doi || p.url || i}`
+      }
+    })
+
+    await clients.sendMessage(m.chat, {
+      interactiveMessage: {
+        title: `Hasil: ${query}`,
+        footer: `${shown.length} paper dari ${sourceLabel}`,
+        buttons: [{
+          name: 'single_select',
+          buttonParamsJson: JSON.stringify({
+            title: 'Pilih paper',
+            sections: [{
+              title: `${sourceLabel} — ${papers.length} hasil`,
+              rows
+            }]
+          })
+        }]
+      },
+      contextInfo: {
+        externalAdReply: {
+          title: sourceLabel,
+          body: `${papers.length} hasil dari ${sourceLabel}`,
+          mediaType: 1,
+          showAdAttribution: false,
+          renderLargerThumbnail: false
+        }
+      }
+    })
+    return
+  }
+
+  // .jurnal: cari paper terbaik berdasarkan judul
   const qlower = query.toLowerCase()
   let bestIdx = 0
   let bestScore = 0
@@ -60,41 +106,8 @@ export default async (clients, m, { prefix, cmd, body }) => {
     await m.reply(`*Paper terbaik:*\n${info}\n\n⏳ Mendownload PDF...`)
     await getpdf(clients, m, { prefix, cmd: 'getpdf', body: `${prefix}getpdf ${bestId}`, paperInfo: best })
   } else {
-    const maxShow = Math.min(papers.length, 100)
-    const shown = papers.slice(0, maxShow)
-    const rows = shown.map((p, i) => {
-      const pa = Array.isArray(p.authors) ? p.authors : (p.authors ? String(p.authors).split(/[,;]/).map(s => s.trim()).filter(Boolean) : [])
-      return {
-      title: `${i + 1}. ${(p.title || '').slice(0, 55)}${p.title?.length > 55 ? '...' : ''}`,
-      description: `[${p.source}] ${(pa[0] || '?')} (${p.year || '?'})${p.pdfUrl ? ' [PDF]' : ''}`,
-      id: `${prefix}paper ${p.doi || p.url || i}`
-    }})
-
-    const footerText = `${shown.length} paper dari ${sourceLabel}`
     await clients.sendMessage(m.chat, {
-      interactiveMessage: {
-        title: `Hasil: ${query}`,
-        footer: footerText,
-        buttons: [{
-          name: 'single_select',
-          buttonParamsJson: JSON.stringify({
-            title: 'Pilih paper',
-            sections: [{
-              title: `${sourceLabel} — ${papers.length} hasil`,
-              rows
-            }]
-          })
-        }]
-      },
-      contextInfo: {
-        externalAdReply: {
-            title: sourceLabel,
-            body: `${papers.length} hasil dari ${sourceLabel}`,
-            mediaType: 1,
-            showAdAttribution: false,
-            renderLargerThumbnail: false
-        }
-      }
+      text: `*Paper terbaik:*\n${info}\n\n${prefix}paper ${best.url || bestIdx} untuk detail`
     })
   }
 }
